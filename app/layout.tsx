@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
+import { Providers } from "@/components/Providers";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -8,9 +9,9 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "UniRide – Ride-sharing for university communities",
+  title: "UniRide – Turning student trips into sustainable rides",
   description:
-    "Find and share rides with students from your university. Airport trips, weekend travel, events, grocery runs, and more—organized in one place.",
+    "Find and share rides with students from your university. Airport trips, grocery runs, and more—organized in one place.",
 };
 
 export default function RootLayout({
@@ -21,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${outfit.variable} font-sans antialiased`}>
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
