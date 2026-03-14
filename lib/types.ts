@@ -21,6 +21,10 @@ export interface Ride {
   creatorEmail?: string;
   startLocation: string;
   destination: string;
+  startLat?: number;
+  startLng?: number;
+  destLat?: number;
+  destLng?: number;
   date: string;
   time: string;
   note?: string;
@@ -55,6 +59,10 @@ export interface RideRequest {
   requesterEmail?: string;
   startLocation: string;
   destination: string;
+  startLat?: number;
+  startLng?: number;
+  destLat?: number;
+  destLng?: number;
   date: string;
   time: string;
   note?: string;

@@ -10,9 +10,11 @@ import { useChat } from "@/context/ChatContext";
 import { RideCard } from "@/components/RideCard";
 import { RequestCard } from "@/components/RequestCard";
 import { RideDetailModal } from "@/components/RideDetailModal";
+import { DashboardRidesMap } from "@/components/DashboardRidesMap";
 import type { RideFilters, RideRequest } from "@/lib/types";
 
 type DashboardTab = "rides" | "requests";
+type RidesViewMode = "list" | "map";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -21,6 +23,7 @@ export default function DashboardPage() {
   const { openRequests, offerRide, removeOffer } = useRideRequests();
   const { getOrCreateRoomForRide, getOrCreateRoomForRequest } = useChat();
   const [tab, setTab] = useState<DashboardTab>("rides");
+  const [ridesViewMode, setRidesViewMode] = useState<RidesViewMode>("list");
   const [detailRideId, setDetailRideId] = useState<string | null>(null);
   const [joinSuccess, setJoinSuccess] = useState<boolean | null>(null);
 
@@ -145,7 +148,29 @@ export default function DashboardPage() {
         {tab === "rides" && (
           <>
             <section className="mt-6 rounded-xl border border-stone-200/80 bg-white p-4">
-              <h2 className="text-sm font-semibold text-stone-700">Filters</h2>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-sm font-semibold text-stone-700">Filters</h2>
+                <div className="flex gap-1 rounded-lg border border-stone-200 p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setRidesViewMode("list")}
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+                      ridesViewMode === "list" ? "bg-teal-100 text-teal-800" : "text-stone-600 hover:bg-stone-50"
+                    }`}
+                  >
+                    List
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRidesViewMode("map")}
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+                      ridesViewMode === "map" ? "bg-teal-100 text-teal-800" : "text-stone-600 hover:bg-stone-50"
+                    }`}
+                  >
+                    Map
+                  </button>
+                </div>
+              </div>
               <div className="mt-3 flex flex-wrap gap-3">
                 <input
                   type="text"
@@ -219,6 +244,12 @@ export default function DashboardPage() {
                     .
                   </p>
                 </div>
+              ) : ridesViewMode === "map" ? (
+                <DashboardRidesMap
+                  rides={filteredRides}
+                  onSelectRide={(id) => openDetail(id)}
+                  selectedRideId={detailRideId}
+                />
               ) : (
                 <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {filteredRides.map((ride) => (

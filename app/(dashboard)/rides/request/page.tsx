@@ -1,20 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useRideRequests } from "@/context/RideRequestsContext";
+import { RideMapForm } from "@/components/RideMapForm";
+import { LocationSearchInput } from "@/components/LocationSearchInput";
+import { geocode } from "@/lib/map-utils";
 
 export default function RequestRidePage() {
   const router = useRouter();
   const { user } = useAuth();
   const { addRequest } = useRideRequests();
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [resolvingLocations, setResolvingLocations] = useState(false);
   const [form, setForm] = useState({
     startLocation: "",
     destination: "",
+    startLat: undefined as number | undefined,
+    startLng: undefined as number | undefined,
+    destLat: undefined as number | undefined,
+    destLng: undefined as number | undefined,
     date: "",
     time: "",
     note: "",
@@ -25,7 +34,15 @@ export default function RequestRidePage() {
   const seatsNeeded = Math.max(1, parseInt(form.seatsNeeded, 10) || 1);
   const maxPrice = form.maxPrice === "" ? undefined : Number(form.maxPrice);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setCurrentLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {}
+    );
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (!user) return;
@@ -33,12 +50,46 @@ export default function RequestRidePage() {
       setError("Please fill in start location, destination, date, and time.");
       return;
     }
+
+    setResolvingLocations(true);
+    let startLat = form.startLat;
+    let startLng = form.startLng;
+    let destLat = form.destLat;
+    let destLng = form.destLng;
+
+    if (startLat == null || startLng == null) {
+      const startResolved = await geocode(form.startLocation.trim());
+      if (startResolved) {
+        startLat = startResolved.lat;
+        startLng = startResolved.lng;
+      }
+    }
+    if (destLat == null || destLng == null) {
+      const destResolved = await geocode(form.destination.trim());
+      if (destResolved) {
+        destLat = destResolved.lat;
+        destLng = destResolved.lng;
+      }
+    }
+    setResolvingLocations(false);
+
+    if (startLat == null || startLng == null || destLat == null || destLng == null) {
+      setError("Please choose start and destination from suggestions, or pin both points on the map.");
+      return;
+    }
+
+    setForm((f) => ({ ...f, startLat, startLng, destLat, destLng }));
+
     addRequest({
       createdByUserId: user.id,
       requesterName: user.name,
       requesterEmail: user.email,
       startLocation: form.startLocation.trim(),
       destination: form.destination.trim(),
+      startLat,
+      startLng,
+      destLat,
+      destLng,
       date: form.date,
       time: form.time,
       note: form.note.trim() || undefined,
@@ -81,25 +132,47 @@ export default function RequestRidePage() {
 
           <div>
             <label className="block text-sm font-medium text-stone-700">Start location *</label>
-            <input
-              type="text"
+            <LocationSearchInput
               value={form.startLocation}
-              onChange={(e) => setForm((f) => ({ ...f, startLocation: e.target.value }))}
-              placeholder="e.g. Campus Main Gate"
-              className="mt-1 w-full rounded-lg border border-stone-300 px-4 py-2.5 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-              required
+              onChange={(value, lat, lng) =>
+                setForm((f) => ({ ...f, startLocation: value, startLat: lat, startLng: lng }))
+              }
+              placeholder="Type to search places (suggestions near you)"
+              aria-label="Start location"
+              nearLat={currentLocation?.lat}
+              nearLng={currentLocation?.lng}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-stone-700">Destination *</label>
-            <input
-              type="text"
+            <LocationSearchInput
               value={form.destination}
-              onChange={(e) => setForm((f) => ({ ...f, destination: e.target.value }))}
-              placeholder="e.g. Walmart, Airport"
-              className="mt-1 w-full rounded-lg border border-stone-300 px-4 py-2.5 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-              required
+              onChange={(value, lat, lng) =>
+                setForm((f) => ({ ...f, destination: value, destLat: lat, destLng: lng }))
+              }
+              placeholder="e.g. Walmart, Airport (suggestions near you)"
+              aria-label="Destination"
+              nearLat={currentLocation?.lat}
+              nearLng={currentLocation?.lng}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-2">Map – see your route</label>
+            <RideMapForm
+              startLocation={form.startLocation}
+              destination={form.destination}
+              startLat={form.startLat}
+              startLng={form.startLng}
+              destLat={form.destLat}
+              destLng={form.destLng}
+              onStartChange={(value, lat, lng) =>
+                setForm((f) => ({ ...f, startLocation: value, startLat: lat, startLng: lng }))
+              }
+              onDestinationChange={(value, lat, lng) =>
+                setForm((f) => ({ ...f, destination: value, destLat: lat, destLng: lng }))
+              }
             />
           </div>
 
@@ -165,9 +238,10 @@ export default function RequestRidePage() {
           <div className="flex gap-3 pt-2">
             <button
               type="submit"
+              disabled={resolvingLocations}
               className="rounded-lg bg-teal-600 px-4 py-2.5 font-semibold text-white hover:bg-teal-700"
             >
-              Post request
+              {resolvingLocations ? "Resolving locations..." : "Post request"}
             </button>
             <Link
               href="/dashboard"

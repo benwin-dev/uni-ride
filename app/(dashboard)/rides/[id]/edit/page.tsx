@@ -5,6 +5,8 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useRides } from "@/context/RidesContext";
+import { RideMapForm } from "@/components/RideMapForm";
+import { LocationSearchInput } from "@/components/LocationSearchInput";
 
 export default function EditRidePage() {
   const router = useRouter();
@@ -13,11 +15,16 @@ export default function EditRidePage() {
   const { user } = useAuth();
   const { getRideById, updateRide } = useRides();
   const ride = id ? getRideById(id) : undefined;
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     startLocation: "",
     destination: "",
+    startLat: undefined as number | undefined,
+    startLng: undefined as number | undefined,
+    destLat: undefined as number | undefined,
+    destLng: undefined as number | undefined,
     date: "",
     time: "",
     note: "",
@@ -25,6 +32,14 @@ export default function EditRidePage() {
     availableSeats: "",
     totalSeats: "",
   });
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setCurrentLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {}
+    );
+  }, []);
 
   useEffect(() => {
     if (ride && user && ride.createdByUserId !== user.id) {
@@ -35,6 +50,10 @@ export default function EditRidePage() {
       setForm({
         startLocation: ride.startLocation,
         destination: ride.destination,
+        startLat: ride.startLat,
+        startLng: ride.startLng,
+        destLat: ride.destLat,
+        destLng: ride.destLng,
         date: ride.date,
         time: ride.time,
         note: ride.note ?? "",
@@ -90,6 +109,10 @@ export default function EditRidePage() {
     updateRide(id, {
       startLocation: form.startLocation.trim(),
       destination: form.destination.trim(),
+      startLat: form.startLat,
+      startLng: form.startLng,
+      destLat: form.destLat,
+      destLng: form.destLng,
       date: form.date,
       time: form.time,
       note: form.note.trim() || undefined,
@@ -128,23 +151,47 @@ export default function EditRidePage() {
 
           <div>
             <label className="block text-sm font-medium text-stone-700">Start location *</label>
-            <input
-              type="text"
+            <LocationSearchInput
               value={form.startLocation}
-              onChange={(e) => setForm((f) => ({ ...f, startLocation: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-stone-300 px-4 py-2.5 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-              required
+              onChange={(value, lat, lng) =>
+                setForm((f) => ({ ...f, startLocation: value, startLat: lat, startLng: lng }))
+              }
+              placeholder="Type to search places (suggestions near you)"
+              aria-label="Start location"
+              nearLat={currentLocation?.lat}
+              nearLng={currentLocation?.lng}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-stone-700">Destination *</label>
-            <input
-              type="text"
+            <LocationSearchInput
               value={form.destination}
-              onChange={(e) => setForm((f) => ({ ...f, destination: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-stone-300 px-4 py-2.5 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-              required
+              onChange={(value, lat, lng) =>
+                setForm((f) => ({ ...f, destination: value, destLat: lat, destLng: lng }))
+              }
+              placeholder="e.g. Walmart, Airport (suggestions near you)"
+              aria-label="Destination"
+              nearLat={currentLocation?.lat}
+              nearLng={currentLocation?.lng}
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-stone-700">Map – see your route</label>
+            <RideMapForm
+              startLocation={form.startLocation}
+              destination={form.destination}
+              startLat={form.startLat}
+              startLng={form.startLng}
+              destLat={form.destLat}
+              destLng={form.destLng}
+              onStartChange={(value, lat, lng) =>
+                setForm((f) => ({ ...f, startLocation: value, startLat: lat, startLng: lng }))
+              }
+              onDestinationChange={(value, lat, lng) =>
+                setForm((f) => ({ ...f, destination: value, destLat: lat, destLng: lng }))
+              }
             />
           </div>
 
