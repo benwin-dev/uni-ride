@@ -9,6 +9,7 @@ interface RideDetailModalProps {
   onClose: () => void;
   onJoin: (rideId: string) => void;
   onLeave?: (rideId: string) => void;
+  onOpenChat?: () => void;
   joinSuccess: boolean | null;
   onDismissSuccess: () => void;
 }
@@ -19,11 +20,13 @@ export function RideDetailModal({
   onClose,
   onJoin,
   onLeave,
+  onOpenChat,
   joinSuccess,
   onDismissSuccess,
 }: RideDetailModalProps) {
   const isFull = ride ? ride.status === "full" || ride.availableSeats <= 0 : false;
   const alreadyJoined = ride?.joinedUserIds.includes(currentUserId) ?? false;
+  const isInRide = ride && (ride.createdByUserId === currentUserId || alreadyJoined);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -150,6 +153,15 @@ export function RideDetailModal({
               className="rounded-lg bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
             >
               Join ride
+            </button>
+          )}
+          {isInRide && onOpenChat && (
+            <button
+              type="button"
+              onClick={() => { onOpenChat(); onClose(); }}
+              className="rounded-lg border border-teal-300 px-4 py-2.5 text-sm font-medium text-teal-700 hover:bg-teal-50"
+            >
+              Open chat
             </button>
           )}
           <button

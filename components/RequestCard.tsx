@@ -7,14 +7,16 @@ interface RequestCardProps {
   currentUserId?: string;
   onOffer?: (requestId: string) => void;
   onRemoveOffer?: (requestId: string) => void;
+  onOpenChat?: (request: RideRequest) => void;
   onClick?: () => void;
 }
 
-export function RequestCard({ request, currentUserId, onOffer, onRemoveOffer, onClick }: RequestCardProps) {
+export function RequestCard({ request, currentUserId, onOffer, onRemoveOffer, onOpenChat, onClick }: RequestCardProps) {
   const isOpen = request.status === "open";
   const offeredBy = request.offeredByUserIds ?? [];
   const hasOffered = currentUserId && offeredBy.includes(currentUserId);
   const isRequester = currentUserId && request.createdByUserId === currentUserId;
+  const isInRequest = isRequester || hasOffered;
 
   return (
     <div className="flex flex-col rounded-xl border border-stone-200/80 bg-white p-5 shadow-sm transition hover:border-teal-200 hover:shadow-md">
@@ -58,10 +60,22 @@ export function RequestCard({ request, currentUserId, onOffer, onRemoveOffer, on
           </p>
         )}
       </div>
-      {isOpen && !isRequester && currentUserId && (
-        <div className="mt-4 pt-3 border-t border-stone-100">
-          {hasOffered && onRemoveOffer ? (
-            <div className="flex flex-wrap gap-2">
+      {isOpen && currentUserId && (
+        <div className="mt-4 pt-3 border-t border-stone-100 flex flex-wrap gap-2">
+          {isInRequest && onOpenChat && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenChat(request);
+              }}
+              className="rounded-lg border border-teal-300 px-4 py-2 text-sm font-medium text-teal-700 hover:bg-teal-50"
+            >
+              Open chat
+            </button>
+          )}
+          {!isRequester && (hasOffered && onRemoveOffer ? (
+            <>
               <span className="rounded-lg bg-teal-100 px-4 py-2 text-sm font-medium text-teal-800">
                 You're offering to help
               </span>
@@ -75,7 +89,7 @@ export function RequestCard({ request, currentUserId, onOffer, onRemoveOffer, on
               >
                 Remove offer
               </button>
-            </div>
+            </>
           ) : onOffer ? (
             <button
               type="button"
@@ -83,11 +97,11 @@ export function RequestCard({ request, currentUserId, onOffer, onRemoveOffer, on
                 e.stopPropagation();
                 onOffer(request.id);
               }}
-              className="w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+              className="rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
             >
               Offer ride
             </button>
-          ) : null}
+          ) : null)}
         </div>
       )}
     </div>

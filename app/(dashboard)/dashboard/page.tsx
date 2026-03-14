@@ -2,20 +2,24 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useRides } from "@/context/RidesContext";
 import { useRideRequests } from "@/context/RideRequestsContext";
+import { useChat } from "@/context/ChatContext";
 import { RideCard } from "@/components/RideCard";
 import { RequestCard } from "@/components/RequestCard";
 import { RideDetailModal } from "@/components/RideDetailModal";
-import type { RideFilters } from "@/lib/types";
+import type { RideFilters, RideRequest } from "@/lib/types";
 
 type DashboardTab = "rides" | "requests";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const { filteredRides, filters, setFilters, getRideById, joinRide, leaveRide } = useRides();
   const { openRequests, offerRide, removeOffer } = useRideRequests();
+  const { getOrCreateRoomForRide, getOrCreateRoomForRequest } = useChat();
   const [tab, setTab] = useState<DashboardTab>("rides");
   const [detailRideId, setDetailRideId] = useState<string | null>(null);
   const [joinSuccess, setJoinSuccess] = useState<boolean | null>(null);
@@ -62,6 +66,28 @@ export default function DashboardPage() {
       removeOffer(requestId, user.id);
     },
     [user, removeOffer]
+  );
+
+  const handleOpenRideChat = useCallback(async () => {
+    if (!detailRide) return;
+    try {
+      const room = await getOrCreateRoomForRide(detailRide);
+      router.push(`/chat/${room.id}`);
+    } catch {
+      // room creation failed
+    }
+  }, [detailRide, getOrCreateRoomForRide, router]);
+
+  const handleOpenRequestChat = useCallback(
+    async (request: RideRequest) => {
+      try {
+        const room = await getOrCreateRoomForRequest(request);
+        router.push(`/chat/${room.id}`);
+      } catch {
+        // room creation failed
+      }
+    },
+    [getOrCreateRoomForRequest, router]
   );
 
   const updateFilter = useCallback(
@@ -232,6 +258,7 @@ export default function DashboardPage() {
                       currentUserId={user?.id}
                       onOffer={handleOfferRequest}
                       onRemoveOffer={handleRemoveOffer}
+                      onOpenChat={handleOpenRequestChat}
                     />
                   </li>
                 ))}
@@ -247,6 +274,7 @@ export default function DashboardPage() {
         onClose={closeDetail}
         onJoin={handleJoin}
         onLeave={handleLeave}
+        onOpenChat={handleOpenRideChat}
         joinSuccess={joinSuccess}
         onDismissSuccess={dismissSuccess}
       />

@@ -9,6 +9,7 @@ const navItems = [
   { href: "/rides/create", label: "Create Ride" },
   { href: "/rides/request", label: "Request Ride" },
   { href: "/rides/my-rides", label: "My Rides" },
+  { href: "/chat", label: "Chat" },
   { href: "/profile", label: "Profile" },
 ];
 

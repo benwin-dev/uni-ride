@@ -65,3 +65,26 @@ export interface RideRequest {
   createdAt: string;
   updatedAt?: string;
 }
+
+// Chat: group chats for a ride or ride request (MongoDB-ready)
+export type ChatRoomType = "ride" | "request";
+
+export interface ChatRoom {
+  id: string;
+  type: ChatRoomType;
+  rideId?: string;   // when type === "ride"
+  requestId?: string; // when type === "request"
+  participantIds: string[];
+  title: string;     // e.g. "Ride to Walmart"
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  roomId: string;
+  senderId: string;
+  senderName: string;
+  content: string;
+  createdAt: string;
+}
