@@ -12,7 +12,7 @@ const DEFAULT_TRIP_KM = 12;
 
 /**
  * Estimate CO2 saved when someone joins a ride (one fewer car on the road).
- * Uses straight-line distance when ride has coordinates; otherwise a typical trip length.
+ * Uses stored distanceKm when set, else straight-line from coordinates, else default trip length.
  */
 export function estimateCO2SavedByJoining(ride: Ride): {
   kgCO2Saved: number;
@@ -20,7 +20,9 @@ export function estimateCO2SavedByJoining(ride: Ride): {
 } {
   let distanceKm: number | null = null;
 
-  if (
+  if (ride.distanceKm != null && ride.distanceKm > 0) {
+    distanceKm = ride.distanceKm;
+  } else if (
     ride.startLat != null &&
     ride.startLng != null &&
     ride.destLat != null &&
@@ -38,4 +40,17 @@ export function estimateCO2SavedByJoining(ride: Ride): {
   const kgCO2Saved = Math.round(km * KG_CO2_PER_KM * 10) / 10;
 
   return { kgCO2Saved, distanceKm };
+}
+
+/** True if the ride has no distance data (needs Gemini or heuristic estimate). */
+export function rideNeedsDistanceEstimate(ride: Ride): boolean {
+  if (ride.distanceKm != null && ride.distanceKm > 0) return false;
+  if (
+    ride.startLat != null &&
+    ride.startLng != null &&
+    ride.destLat != null &&
+    ride.destLng != null
+  )
+    return false;
+  return true;
 }

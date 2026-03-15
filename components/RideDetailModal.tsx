@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { Ride } from "@/lib/types";
-import { estimateCO2SavedByJoining } from "@/lib/carbon-utils";
+import {
+  estimateCO2SavedByJoining,
+  rideNeedsDistanceEstimate,
+} from "@/lib/carbon-utils";
 
 interface RideDetailModalProps {
   ride: Ride | null;
@@ -29,6 +32,9 @@ export function RideDetailModal({
   const alreadyJoined = ride?.joinedUserIds.includes(currentUserId) ?? false;
   const isInRide = ride && (ride.createdByUserId === currentUserId || alreadyJoined);
 
+  const [estimatedCarbon, setEstimatedCarbon] = useState<number | null>(null);
+  const [carbonLoading, setCarbonLoading] = useState(false);
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -36,6 +42,45 @@ export function RideDetailModal({
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
   }, [onClose]);
+
+  useEffect(() => {
+    if (!ride || !joinSuccess || !rideNeedsDistanceEstimate(ride)) {
+      setEstimatedCarbon(null);
+      return;
+    }
+    let cancelled = false;
+    setCarbonLoading(true);
+    setEstimatedCarbon(null);
+    fetch("/api/rides/estimate-distance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        startLocation: ride.startLocation,
+        destination: ride.destination,
+      }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled && typeof data.kgCO2Saved === "number") {
+          setEstimatedCarbon(data.kgCO2Saved);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setCarbonLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [ride?.id, joinSuccess, ride?.startLocation, ride?.destination]);
+
+  const carbonDisplay =
+    joinSuccess && ride
+      ? estimatedCarbon != null
+        ? estimatedCarbon
+        : carbonLoading
+          ? null
+          : estimateCO2SavedByJoining(ride).kgCO2Saved
+      : null;
 
   if (!ride) return null;
 
@@ -69,9 +114,21 @@ export function RideDetailModal({
           <div className="mt-4 rounded-lg bg-emerald-50 p-4 text-emerald-800">
             <p className="font-medium">You have booked successfully.</p>
             <p className="mt-2 text-sm">
-              You’ve saved approximately{" "}
-              <strong>{estimateCO2SavedByJoining(ride).kgCO2Saved} kg CO₂</strong> by sharing this
-              ride—one fewer car on the road.
+              {carbonDisplay != null ? (
+                <>
+                  You’ve saved approximately{" "}
+                  <strong>{carbonDisplay} kg CO₂</strong> by sharing this
+                  ride—one fewer car on the road.
+                </>
+              ) : carbonLoading ? (
+                <>Estimating your carbon impact…</>
+              ) : (
+                <>
+                  You’ve saved approximately{" "}
+                  <strong>{estimateCO2SavedByJoining(ride).kgCO2Saved} kg CO₂</strong> by
+                  sharing this ride—one fewer car on the road.
+                </>
+              )}
             </p>
             <button
               type="button"
