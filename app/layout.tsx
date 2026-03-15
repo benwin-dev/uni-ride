@@ -9,9 +9,9 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "UniRide – Turning student trips into sustainable rides",
+  title: "UniRide - Turning student trips into sustainable rides",
   description:
-    "Find and share rides with students from your university. Airport trips, grocery runs, and more—organized in one place.",
+    "Find and share rides with students from your university. Airport trips, grocery runs, and more - organized in one place.",
 };
 
 export default function RootLayout({

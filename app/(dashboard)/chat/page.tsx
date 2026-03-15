@@ -29,7 +29,7 @@ export default function ChatListPage() {
           <div className="mt-8 rounded-xl border border-stone-200/80 bg-white p-12 text-center">
             <p className="text-stone-500">No chats yet.</p>
             <p className="mt-2 text-sm text-stone-400">
-              Join a ride or offer to help on a request — a chat will appear here so you can coordinate.
+              Join a ride or offer to help on a request - a chat will appear here so you can coordinate.
             </p>
             <Link
               href="/dashboard"

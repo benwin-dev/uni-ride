@@ -118,7 +118,7 @@ export function RideDetailModal({
                 <>
                   You’ve saved approximately{" "}
                   <strong>{carbonDisplay} kg CO₂</strong> by sharing this
-                  ride—one fewer car on the road.
+                  ride-one fewer car on the road.
                 </>
               ) : carbonLoading ? (
                 <>Estimating your carbon impact…</>
@@ -126,7 +126,7 @@ export function RideDetailModal({
                 <>
                   You’ve saved approximately{" "}
                   <strong>{estimateCO2SavedByJoining(ride).kgCO2Saved} kg CO₂</strong> by
-                  sharing this ride—one fewer car on the road.
+                  sharing this ride-one fewer car on the road.
                 </>
               )}
             </p>
