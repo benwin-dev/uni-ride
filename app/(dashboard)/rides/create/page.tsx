@@ -35,6 +35,7 @@ export default function CreateRidePage() {
   });
   const [voiceStatus, setVoiceStatus] = useState<"idle" | "recording" | "processing">("idle");
   const [voiceError, setVoiceError] = useState("");
+  const [voiceJustPrefilled, setVoiceJustPrefilled] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
@@ -105,6 +106,8 @@ export default function CreateRidePage() {
         totalSeats: String(ride.totalSeats ?? 3),
       }));
       setVoiceError("");
+      setVoiceJustPrefilled(true);
+      setTimeout(() => setVoiceJustPrefilled(false), 3000);
     } catch (err) {
       setVoiceError("Network or server error. Try again.");
     }
@@ -263,6 +266,7 @@ export default function CreateRidePage() {
               aria-label="Start location"
               nearLat={currentLocation?.lat}
               nearLng={currentLocation?.lng}
+              autoSelectFirstWhenReady={voiceJustPrefilled}
             />
           </div>
 
@@ -277,6 +281,7 @@ export default function CreateRidePage() {
               aria-label="Destination"
               nearLat={currentLocation?.lat}
               nearLng={currentLocation?.lng}
+              autoSelectFirstWhenReady={voiceJustPrefilled}
             />
           </div>
 

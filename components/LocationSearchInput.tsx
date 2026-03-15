@@ -24,6 +24,8 @@ interface LocationSearchInputProps {
   /** Bias suggestions near this location (e.g. user's current position) */
   nearLat?: number;
   nearLng?: number;
+  /** When true, automatically pick the first suggestion once loaded (e.g. after voice prefill). */
+  autoSelectFirstWhenReady?: boolean;
 }
 
 export function LocationSearchInput({
@@ -35,6 +37,7 @@ export function LocationSearchInput({
   "aria-label": ariaLabel,
   nearLat,
   nearLng,
+  autoSelectFirstWhenReady = false,
 }: LocationSearchInputProps) {
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -46,12 +49,23 @@ export function LocationSearchInput({
   const placesServiceRef = useRef<HTMLDivElement>(null);
   const requestIdRef = useRef(0);
   const cacheRef = useRef<Map<string, SuggestionItem[]>>(new Map());
+  const hasAutoSelectedRef = useRef(false);
+  /** After auto-select, value updates; skip the next suggestion run for that new value so dropdown stays closed. */
+  const skipNextSuggestionsRef = useRef(false);
+  const valueBeforeSelectRef = useRef<string>("");
   // Free by default: Nominatim + Photon (no API key). Set NEXT_PUBLIC_GOOGLE_PLACES_API_KEY to use Google.
   const useGoogle = !!getGooglePlacesApiKey();
 
   useEffect(() => {
     const query = value.trim();
     if (!query || query.length < 2) {
+      setSuggestions([]);
+      setLoading(false);
+      return;
+    }
+    if (skipNextSuggestionsRef.current && valueBeforeSelectRef.current !== "" && query !== valueBeforeSelectRef.current) {
+      skipNextSuggestionsRef.current = false;
+      valueBeforeSelectRef.current = "";
       setSuggestions([]);
       setLoading(false);
       return;
@@ -68,6 +82,8 @@ export function LocationSearchInput({
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       const reqId = ++requestIdRef.current;
+      const shouldSkipWhenDone = () =>
+        skipNextSuggestionsRef.current && valueBeforeSelectRef.current !== "" && query !== valueBeforeSelectRef.current;
       try {
         if (useGoogle) {
           const list = await getGooglePlacePredictions(query, {
@@ -81,7 +97,13 @@ export function LocationSearchInput({
             placeId: p.placeId,
           }));
           if (items.length > 0) cacheRef.current.set(cacheKey, items);
-          setSuggestions(items);
+          if (shouldSkipWhenDone()) {
+            skipNextSuggestionsRef.current = false;
+            valueBeforeSelectRef.current = "";
+            setSuggestions([]);
+          } else {
+            setSuggestions(items);
+          }
         } else {
           let results = await suggestPlaces(query, {
             nearLat: nearLat ?? undefined,
@@ -97,7 +119,13 @@ export function LocationSearchInput({
             lng: r.lng,
           }));
           if (items.length > 0) cacheRef.current.set(cacheKey, items);
-          setSuggestions(items);
+          if (shouldSkipWhenDone()) {
+            skipNextSuggestionsRef.current = false;
+            valueBeforeSelectRef.current = "";
+            setSuggestions([]);
+          } else {
+            setSuggestions(items);
+          }
         }
         setHighlight(0);
       } finally {
@@ -128,6 +156,27 @@ export function LocationSearchInput({
     },
     [onChange]
   );
+
+  // Reset auto-select flag when parent turns off the mode (e.g. after voice prefill delay).
+  useEffect(() => {
+    if (!autoSelectFirstWhenReady) hasAutoSelectedRef.current = false;
+  }, [autoSelectFirstWhenReady]);
+
+  // When voice prefill sets a value, auto-pick first suggestion once loaded.
+  useEffect(() => {
+    if (
+      !autoSelectFirstWhenReady ||
+      hasAutoSelectedRef.current ||
+      loading ||
+      detailLoading ||
+      suggestions.length === 0
+    )
+      return;
+    hasAutoSelectedRef.current = true;
+    skipNextSuggestionsRef.current = true;
+    valueBeforeSelectRef.current = value.trim();
+    handleSelect(suggestions[0]);
+  }, [autoSelectFirstWhenReady, loading, detailLoading, suggestions, handleSelect]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
