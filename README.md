@@ -77,6 +77,7 @@ The app works without any env vars. These enable extra features:
 | Variable | Purpose |
 |----------|--------|
 | `NEXT_PUBLIC_GOOGLE_PLACES_API_KEY` | Google Places autocomplete for location search (enable Places API + Maps JavaScript API). Without it, Nominatim/Photon is used. |
+| `OPENROUTESERVICE_API_KEY` | **Driving route on map** – [OpenRouteService](https://openrouteservice.org/) free API key for the create/edit ride map. When set, the map shows the real driving path between start and destination; otherwise the app tries OSRM, then falls back to a straight line. Get a key at [openrouteservice.org/dev](https://openrouteservice.org/dev). |
 | `GOOGLE_STUDIO_API_KEY` | Used by `/api/rides/estimate-distance` and `/api/rides/voice` for distance/voice parsing. |
 | `ELEVENLABS_API_KEY` | Used by `/api/rides/voice` for speech-to-text when creating a ride by voice. |
 

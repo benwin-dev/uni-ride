@@ -80,17 +80,33 @@ export function RideMapForm({
     if (destination.trim() && !destCoords) updateDestFromGeocode();
   }, [destination]);
 
-  // Always draw a single line connecting the two pins (OSRM can fail or return broken routes for long/cross-water trips).
+  // Fetch driving route from API (OpenRouteService if key set, else OSRM); fallback to straight line.
   useEffect(() => {
-    if (startCoords && destCoords) {
-      const straightLine: [number, number][] = [
-        [startCoords.lng, startCoords.lat],
-        [destCoords.lng, destCoords.lat],
-      ];
-      setRoute(straightLine);
-    } else {
+    if (!startCoords || !destCoords) {
       setRoute(null);
+      return;
     }
+    const from = `${startCoords.lat},${startCoords.lng}`;
+    const to = `${destCoords.lat},${destCoords.lng}`;
+    fetch(`/api/map/route?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        const coords = data?.coordinates;
+        if (Array.isArray(coords) && coords.length >= 2) {
+          setRoute(coords);
+        } else {
+          setRoute([
+            [startCoords.lng, startCoords.lat],
+            [destCoords.lng, destCoords.lat],
+          ]);
+        }
+      })
+      .catch(() => {
+        setRoute([
+          [startCoords.lng, startCoords.lat],
+          [destCoords.lng, destCoords.lat],
+        ]);
+      });
   }, [startCoords, destCoords]);
 
   const useMyLocation = useCallback(() => {
