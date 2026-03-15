@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRides } from "@/context/RidesContext";
 import { useRideRequests } from "@/context/RideRequestsContext";
 import { getTopMatches } from "@/lib/matching-utils";
+import { estimateCO2SavedByJoining } from "@/lib/carbon-utils";
 import type { Ride, RideRequest } from "@/lib/types";
 
 interface MatchResult {
@@ -25,6 +26,7 @@ export default function MatchingPage() {
   const [matches, setMatches] = useState<MatchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [joinSuccess, setJoinSuccess] = useState<{ rideId: string; kgCO2Saved: number } | null>(null);
 
   const selectedRequest = selectedRequestId
     ? getRequestById(selectedRequestId) ?? openRequests.find((r) => r.id === selectedRequestId)
@@ -95,12 +97,16 @@ export default function MatchingPage() {
   }, [selectedRequestId, fetchMatches]);
 
   const handleJoin = useCallback(
-    (rideId: string) => {
+    (ride: Ride) => {
       if (!user) return;
-      joinRide(rideId, user.id);
+      joinRide(ride.id, user.id);
+      const { kgCO2Saved } = estimateCO2SavedByJoining(ride);
+      setJoinSuccess({ rideId: ride.id, kgCO2Saved });
     },
     [user, joinRide]
   );
+
+  const dismissJoinSuccess = useCallback(() => setJoinSuccess(null), []);
 
   return (
     <div className="p-6 md:p-8">
@@ -109,6 +115,23 @@ export default function MatchingPage() {
         <p className="mt-1 text-stone-600">
           Select a ride request to see the best matching rides (by shortest detour and efficiency).
         </p>
+
+        {joinSuccess && (
+          <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
+            <p className="font-medium">You have joined the ride successfully.</p>
+            <p className="mt-2 text-sm">
+              You&apos;ve saved approximately <strong>{joinSuccess.kgCO2Saved} kg CO₂</strong> by
+              sharing this ride—one fewer car on the road.
+            </p>
+            <button
+              type="button"
+              onClick={dismissJoinSuccess}
+              className="mt-2 text-sm font-medium underline hover:no-underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         <section className="mt-8">
           <h2 className="text-lg font-semibold text-stone-800">Open requests</h2>
@@ -219,7 +242,7 @@ export default function MatchingPage() {
                         {canJoin && (
                           <button
                             type="button"
-                            onClick={() => handleJoin(ride.id)}
+                            onClick={() => handleJoin(ride)}
                             className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700"
                           >
                             Join ride
