@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { Map } from "@/components/Map";
-import { geocode, getRoute, reverseGeocode } from "@/lib/map-utils";
+import { geocode, reverseGeocode } from "@/lib/map-utils";
 
 const DEFAULT_CENTER: [number, number] = [37.8719, -122.2585]; // Berkeley area; change to your campus
 
@@ -80,11 +80,14 @@ export function RideMapForm({
     if (destination.trim() && !destCoords) updateDestFromGeocode();
   }, [destination]);
 
+  // Always draw a single line connecting the two pins (OSRM can fail or return broken routes for long/cross-water trips).
   useEffect(() => {
     if (startCoords && destCoords) {
-      getRoute(startCoords, destCoords).then((r) => {
-        setRoute(r?.coordinates ?? null);
-      });
+      const straightLine: [number, number][] = [
+        [startCoords.lng, startCoords.lat],
+        [destCoords.lng, destCoords.lat],
+      ];
+      setRoute(straightLine);
     } else {
       setRoute(null);
     }
