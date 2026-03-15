@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Map } from "@/components/Map";
-import type { MapPolyline } from "@/components/Map";
 import type { Ride } from "@/lib/types";
-import { geocode, getRoute, getDistanceFromUser, haversineKm } from "@/lib/map-utils";
+import { geocode, getDistanceFromUser, haversineKm } from "@/lib/map-utils";
 
 const DEFAULT_CENTER: [number, number] = [37.8719, -122.2585];
 
@@ -25,14 +24,14 @@ export function DashboardRidesMap({ rides, onSelectRide, selectedRideId }: Dashb
   const [mapSearch, setMapSearch] = useState("");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [coordsCache, setCoordsCache] = useState<Record<string, ResolvedCoords>>({});
-  const [routesCache, setRoutesCache] = useState<Record<string, [number, number][]>>({});
   const [distanceCache, setDistanceCache] = useState<Record<string, { distanceKm: number; durationMin: number }>>({});
   const [sortBy, setSortBy] = useState<MapSortOption>("soonest");
   const [loadingTime, setLoadingTime] = useState(false);
 
+  // Only show rides that match the search (e.g. "Walmart" → only Walmart destinations/starts)
   const ridesFilteredBySearch = useMemo(() => {
     const q = mapSearch.trim().toLowerCase();
-    if (!q) return rides;
+    if (!q) return []; // show nothing until user types a destination/start to filter
     return rides.filter(
       (r) =>
         r.destination.toLowerCase().includes(q) ||
@@ -73,20 +72,6 @@ export function DashboardRidesMap({ rides, onSelectRide, selectedRideId }: Dashb
       cancelled = true;
     };
   }, [ridesFilteredBySearch, resolveCoords, coordsCache]);
-
-  useEffect(() => {
-    let cancelled = false;
-    ridesFilteredBySearch.forEach(async (ride) => {
-      const coords = coordsCache[ride.id];
-      if (!coords || routesCache[ride.id]) return;
-      const result = await getRoute(coords.start, coords.dest);
-      if (cancelled || !result?.coordinates?.length) return;
-      setRoutesCache((prev) => ({ ...prev, [ride.id]: result.coordinates }));
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [ridesFilteredBySearch, coordsCache, routesCache]);
 
   useEffect(() => {
     if (sortBy !== "time" || !userLocation) return;
@@ -145,30 +130,15 @@ export function DashboardRidesMap({ rides, onSelectRide, selectedRideId }: Dashb
     return list;
   }, [ridesWithDistance, sortBy, userLocation]);
 
+  // Only starting points (no routes, no destination pins) so people can see which start is closer to them
   const markers = useMemo(() => {
-    const out: { lat: number; lng: number; label: string; id: string }[] = [];
-    ridesWithDistance.forEach(({ ride, coords }) => {
-      out.push({
-        lat: coords.start.lat,
-        lng: coords.start.lng,
-        label: `${ride.destination} (start)`,
-        id: ride.id,
-      });
-      out.push({
-        lat: coords.dest.lat,
-        lng: coords.dest.lng,
-        label: ride.destination,
-        id: ride.id,
-      });
-    });
-    return out;
+    return ridesWithDistance.map(({ ride, coords }) => ({
+      lat: coords.start.lat,
+      lng: coords.start.lng,
+      label: `${ride.startLocation} → ${ride.destination}`,
+      id: ride.id,
+    }));
   }, [ridesWithDistance]);
-
-  const polylines: MapPolyline[] = useMemo(() => {
-    return ridesWithDistance
-      .filter(({ ride }) => routesCache[ride.id]?.length)
-      .map(({ ride }) => ({ id: ride.id, positions: routesCache[ride.id]! }));
-  }, [ridesWithDistance, routesCache]);
 
   const center: [number, number] = useMemo(() => {
     const points = markers.map((m) => [m.lat, m.lng] as const);
@@ -190,23 +160,37 @@ export function DashboardRidesMap({ rides, onSelectRide, selectedRideId }: Dashb
           type="search"
           value={mapSearch}
           onChange={(e) => setMapSearch(e.target.value)}
-          placeholder="Search by destination or start (e.g. Walmart) – see all matching rides on map"
+          placeholder="Type a destination or start (e.g. Walmart) to see rides on the map"
           className="w-full rounded-lg border border-stone-300 px-4 py-2.5 text-sm placeholder:text-stone-400 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-          aria-label="Search rides by destination or start point"
+          aria-label="Search by destination or start point to see matching rides"
         />
-        {mapSearch.trim() && (
+        {!mapSearch.trim() ? (
+          <p className="mt-1.5 text-xs text-stone-500">
+            Type a destination or starting point above to see only those rides on the map and choose one.
+          </p>
+        ) : ridesFilteredBySearch.length === 0 ? (
+          <p className="mt-1.5 text-sm text-stone-600">
+            No rides match “{mapSearch.trim()}”. Try another destination or start.
+          </p>
+        ) : (
           <p className="mt-1.5 text-xs text-stone-500">
             Showing {ridesFilteredBySearch.length} ride{ridesFilteredBySearch.length !== 1 ? "s" : ""} matching “{mapSearch.trim()}”
           </p>
         )}
       </div>
+
+      {mapSearch.trim() && ridesFilteredBySearch.length === 0 ? (
+        <div className="rounded-xl border border-stone-200/80 bg-stone-50 p-8 text-center">
+          <p className="text-stone-600">No rides match “{mapSearch.trim()}”.</p>
+          <p className="mt-1 text-sm text-stone-500">Change the search above to see rides on the map.</p>
+        </div>
+      ) : (
       <div className="flex flex-col gap-4 lg:flex-row">
       <div className="flex-1 overflow-hidden rounded-xl border border-stone-200/80 bg-white">
         <Map
           center={center}
           zoom={11}
           markers={markers}
-          polylines={polylines}
           userLocation={userLocation}
           onMarkerClick={(id) => onSelectRide(id)}
           height="420px"
@@ -215,7 +199,10 @@ export function DashboardRidesMap({ rides, onSelectRide, selectedRideId }: Dashb
       </div>
       <div className="w-full lg:w-80 shrink-0 space-y-3 rounded-xl border border-stone-200/80 bg-white p-4">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-sm font-medium text-stone-700">Rides on map</span>
+          <span className="text-sm font-medium text-stone-700">
+            Rides matching “{mapSearch.trim()}”
+          </span>
+          {ridesFilteredBySearch.length > 0 && (
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as MapSortOption)}
@@ -227,7 +214,14 @@ export function DashboardRidesMap({ rides, onSelectRide, selectedRideId }: Dashb
               {loadingTime ? "Loading…" : "Closest (drive time)"}
             </option>
           </select>
+          )}
         </div>
+        {!mapSearch.trim() ? (
+          <p className="text-sm text-stone-500 py-4">
+            Enter a destination or starting point in the search above (e.g. Walmart) to see only those rides on the map and pick one.
+          </p>
+        ) : (
+        <>
         <ul className="max-h-[320px] space-y-2 overflow-y-auto">
           {sortedRides.map(({ ride, distanceKm, durationMin }) => (
             <li key={ride.id}>
@@ -258,13 +252,11 @@ export function DashboardRidesMap({ rides, onSelectRide, selectedRideId }: Dashb
         {ridesFilteredBySearch.length > 0 && sortedRides.length === 0 && (
           <p className="text-sm text-stone-500">Resolving locations for map…</p>
         )}
-        {ridesFilteredBySearch.length === 0 && (
-          <p className="text-sm text-stone-500">
-            {mapSearch.trim() ? `No rides match “${mapSearch.trim()}”.` : "No rides to show."}
-          </p>
+        </>
         )}
       </div>
       </div>
+      )}
     </div>
   );
 }
