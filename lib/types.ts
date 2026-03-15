@@ -10,6 +10,8 @@ export interface User {
   phone?: string;
   avatar?: string;
   bio?: string;
+  /** Cumulative kg CO₂ saved by joining shared rides (persisted with user). */
+  totalCO2SavedKg?: number;
   createdAt?: string;
   updatedAt?: string;
 }

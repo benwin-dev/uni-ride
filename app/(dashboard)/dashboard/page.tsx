@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useRides } from "@/context/RidesContext";
+import { estimateCO2SavedByJoining } from "@/lib/carbon-utils";
 import { useRideRequests } from "@/context/RideRequestsContext";
 import { useChat } from "@/context/ChatContext";
 import { RideCard } from "@/components/RideCard";
@@ -18,7 +19,7 @@ type RidesViewMode = "list" | "map";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, addCO2Saved } = useAuth();
   const { filteredRides, filters, setFilters, getRideById, joinRide, leaveRide } = useRides();
   const { openRequests, offerRide, removeOffer } = useRideRequests();
   const { getOrCreateRoomForRide, getOrCreateRoomForRequest } = useChat();
@@ -32,10 +33,15 @@ export default function DashboardPage() {
   const handleJoin = useCallback(
     (rideId: string) => {
       if (!user) return;
+      const ride = getRideById(rideId);
       joinRide(rideId, user.id);
+      if (ride) {
+        const { kgCO2Saved } = estimateCO2SavedByJoining(ride);
+        addCO2Saved(kgCO2Saved);
+      }
       setJoinSuccess(true);
     },
-    [user, joinRide]
+    [user, joinRide, getRideById, addCO2Saved]
   );
 
   const handleLeave = useCallback(

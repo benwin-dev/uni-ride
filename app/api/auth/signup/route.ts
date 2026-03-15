@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
         phone: json.phone,
         avatar: json.avatar,
         bio: json.bio,
+        totalCO2SavedKg: (json as { totalCO2SavedKg?: number }).totalCO2SavedKg ?? 0,
         createdAt: json.createdAt,
         updatedAt: json.updatedAt,
       },

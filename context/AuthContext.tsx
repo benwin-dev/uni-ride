@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { User } from "@/lib/types";
 import { MOCK_USERS } from "@/lib/mock-data";
 
@@ -27,10 +27,14 @@ function saveStoredUsers(users: User[]) {
 
 interface AuthContextValue {
   user: User | null;
+  /** False until we've read from localStorage (avoids hydration mismatch). */
+  authReady: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   signUp: (data: { name: string; email: string; university: string; password?: string }) => Promise<boolean>;
   logout: () => void;
   updateProfile: (updates: Partial<User>) => void;
+  /** Add to cumulative CO₂ saved (persists to DB when available, else localStorage). */
+  addCO2Saved: (amount: number) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -70,7 +74,13 @@ function loginFallback(email: string): User | null {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(getStoredUser);
+  const [user, setUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    setUser(getStoredUser());
+    setAuthReady(true);
+  }, []);
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     const res = await fetch("/api/auth/login", {
@@ -180,8 +190,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, [user]);
 
+  const addCO2Saved = useCallback(
+    (amount: number) => {
+      if (!user || amount <= 0) return;
+      const newTotal = (user.totalCO2SavedKg ?? 0) + amount;
+      fetch(`/api/users/${user.id}/add-co2`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount }),
+      })
+        .then((res) =>
+          res.json().then((data: { totalCO2SavedKg?: number }) => ({ ok: res.ok, data }))
+        )
+        .then(({ ok, data }) => {
+          if (ok && typeof data.totalCO2SavedKg === "number") {
+            setUser((prev) => {
+              if (!prev) return prev;
+              const next = {
+                ...prev,
+                totalCO2SavedKg: data.totalCO2SavedKg,
+                updatedAt: new Date().toISOString(),
+              };
+              try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+              } catch {}
+              return next;
+            });
+          } else {
+            updateProfile({ totalCO2SavedKg: newTotal });
+          }
+        })
+        .catch(() => {
+          updateProfile({ totalCO2SavedKg: newTotal });
+        });
+    },
+    [user, updateProfile]
+  );
+
   return (
-    <AuthContext.Provider value={{ user, login, signUp, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, authReady, login, signUp, logout, updateProfile, addCO2Saved }}>
       {children}
     </AuthContext.Provider>
   );

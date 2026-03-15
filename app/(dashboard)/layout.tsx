@@ -11,21 +11,21 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, authReady } = useAuth();
 
   useEffect(() => {
-    if (user === undefined) return;
+    if (!authReady) return;
     if (!user) {
       router.replace("/login");
       return;
     }
-  }, [user, router]);
+  }, [user, authReady, router]);
 
-  if (!user) {
+  if (!authReady || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-emerald-50/50">
         <p className="rounded-full border border-emerald-200 bg-white/80 px-4 py-2 text-stone-600 shadow-sm">
-          Redirecting to login…
+          {authReady ? "Redirecting to login…" : "Loading…"}
         </p>
       </div>
     );

@@ -50,6 +50,17 @@ export function SideNav() {
         })}
       </nav>
       <div className="border-t border-emerald-100 p-3">
+        {user && (
+          <div className="mb-2 rounded-lg bg-emerald-50 px-3 py-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+              CO₂ saved
+            </p>
+            <p className="text-lg font-bold text-emerald-800">
+              {Number((user.totalCO2SavedKg ?? 0).toFixed(1))} kg
+            </p>
+            <p className="text-xs text-stone-500">by sharing rides</p>
+          </div>
+        )}
         <p className="truncate rounded-md bg-emerald-50/70 px-3 py-1.5 text-xs text-stone-600">{user?.email}</p>
         <button
           type="button"

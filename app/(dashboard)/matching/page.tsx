@@ -19,7 +19,7 @@ interface MatchResult {
 }
 
 export default function MatchingPage() {
-  const { user } = useAuth();
+  const { user, addCO2Saved } = useAuth();
   const { rides, getRideById, joinRide } = useRides();
   const { openRequests, getRequestById } = useRideRequests();
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
@@ -101,9 +101,10 @@ export default function MatchingPage() {
       if (!user) return;
       joinRide(ride.id, user.id);
       const { kgCO2Saved } = estimateCO2SavedByJoining(ride);
+      addCO2Saved(kgCO2Saved);
       setJoinSuccess({ rideId: ride.id, kgCO2Saved });
     },
-    [user, joinRide]
+    [user, joinRide, addCO2Saved]
   );
 
   const dismissJoinSuccess = useCallback(() => setJoinSuccess(null), []);

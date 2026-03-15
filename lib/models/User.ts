@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema(
     phone: String,
     avatar: String,
     bio: String,
+    totalCO2SavedKg: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
@@ -25,6 +26,7 @@ export interface UserDoc extends mongoose.Document {
   phone?: string;
   avatar?: string;
   bio?: string;
+  totalCO2SavedKg?: number;
   createdAt: Date;
   updatedAt: Date;
 }

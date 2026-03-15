@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
         phone: user.phone,
         avatar: user.avatar,
         bio: user.bio,
+        totalCO2SavedKg: user.totalCO2SavedKg ?? 0,
         createdAt: user.createdAt?.toISOString(),
         updatedAt: user.updatedAt?.toISOString(),
       },
