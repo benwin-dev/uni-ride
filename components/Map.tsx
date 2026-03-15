@@ -34,15 +34,24 @@ export interface MapComponentProps {
   height?: string;
 }
 
-const MapInner = dynamic(() => import("./MapInner").then((m) => m.MapInner), {
+const loadingPlaceholder = (
+  <div className="flex items-center justify-center rounded-xl bg-stone-100 text-stone-500" style={{ minHeight: 280 }}>
+    Loading map…
+  </div>
+);
+
+const MapInnerLeaflet = dynamic(() => import("./MapInner").then((m) => m.MapInner), {
   ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center rounded-xl bg-stone-100 text-stone-500" style={{ minHeight: 280 }}>
-      Loading map…
-    </div>
-  ),
+  loading: () => loadingPlaceholder,
 });
 
+const MapInnerGoogle = dynamic(
+  () => import("./GoogleMapInner").then((m) => m.GoogleMapInner),
+  { ssr: false, loading: () => loadingPlaceholder }
+);
+
+/** Use Google Maps when NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is set; otherwise OpenStreetMap (Leaflet). */
 export function Map(props: MapComponentProps) {
-  return <MapInner {...props} />;
+  const useGoogleMaps = !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  return useGoogleMaps ? <MapInnerGoogle {...props} /> : <MapInnerLeaflet {...props} />;
 }

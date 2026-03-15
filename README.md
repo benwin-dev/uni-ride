@@ -76,6 +76,7 @@ The app works without any env vars. These enable extra features:
 
 | Variable | Purpose |
 |----------|--------|
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | **Google Maps** – When set, the app uses Google Maps instead of OpenStreetMap (Leaflet) for the create/edit ride map and dashboard map. Enable the [Maps JavaScript API](https://console.cloud.google.com/apis/library/maps-backend.googleapis.com) in your Google Cloud project. |
 | `NEXT_PUBLIC_GOOGLE_PLACES_API_KEY` | Google Places autocomplete for location search (enable Places API + Maps JavaScript API). Without it, Nominatim/Photon is used. |
 | `OPENROUTESERVICE_API_KEY` | **Driving route on map** – [OpenRouteService](https://openrouteservice.org/) free API key for the create/edit ride map. When set, the map shows the real driving path between start and destination; otherwise the app tries OSRM, then falls back to a straight line. Get a key at [openrouteservice.org/dev](https://openrouteservice.org/dev). |
 | `GOOGLE_STUDIO_API_KEY` | Used by `/api/rides/estimate-distance` and `/api/rides/voice` for distance/voice parsing. |

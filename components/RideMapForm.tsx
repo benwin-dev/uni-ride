@@ -80,7 +80,7 @@ export function RideMapForm({
     if (destination.trim() && !destCoords) updateDestFromGeocode();
   }, [destination]);
 
-  // Fetch driving route from API (OpenRouteService if key set, else OSRM); fallback to straight line.
+  // Fetch driving route from API; ignore stale responses when coords change before fetch completes.
   useEffect(() => {
     if (!startCoords || !destCoords) {
       setRoute(null);
@@ -88,11 +88,26 @@ export function RideMapForm({
     }
     const from = `${startCoords.lat},${startCoords.lng}`;
     const to = `${destCoords.lat},${destCoords.lng}`;
-    fetch(`/api/map/route?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`)
+    const abort = new AbortController();
+    fetch(`/api/map/route?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, {
+      signal: abort.signal,
+    })
       .then((res) => res.json())
       .then((data) => {
         const coords = data?.coordinates;
-        if (Array.isArray(coords) && coords.length >= 2) {
+        if (!Array.isArray(coords) || coords.length < 2) {
+          setRoute([
+            [startCoords.lng, startCoords.lat],
+            [destCoords.lng, destCoords.lat],
+          ]);
+          return;
+        }
+        // Only use API route if it actually connects our points (first ~start, last ~dest).
+        const [firstLng, firstLat] = coords[0];
+        const [lastLng, lastLat] = coords[coords.length - 1];
+        const kmFromStart = Math.hypot(firstLat - startCoords.lat, firstLng - startCoords.lng) * 111;
+        const kmToDest = Math.hypot(lastLat - destCoords.lat, lastLng - destCoords.lng) * 111;
+        if (kmFromStart < 1 && kmToDest < 1) {
           setRoute(coords);
         } else {
           setRoute([
@@ -101,12 +116,14 @@ export function RideMapForm({
           ]);
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err?.name === "AbortError") return;
         setRoute([
           [startCoords.lng, startCoords.lat],
           [destCoords.lng, destCoords.lat],
         ]);
       });
+    return () => abort.abort();
   }, [startCoords, destCoords]);
 
   const useMyLocation = useCallback(() => {
