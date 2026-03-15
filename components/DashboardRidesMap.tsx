@@ -7,8 +7,6 @@ import { geocode, getDistanceFromUser, haversineKm } from "@/lib/map-utils";
 
 const DEFAULT_CENTER: [number, number] = [37.8719, -122.2585];
 
-export type MapSortOption = "soonest" | "distance" | "time";
-
 interface DashboardRidesMapProps {
   rides: Ride[];
   onSelectRide: (rideId: string) => void;
@@ -25,7 +23,6 @@ export function DashboardRidesMap({ rides, onSelectRide, selectedRideId }: Dashb
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [coordsCache, setCoordsCache] = useState<Record<string, ResolvedCoords>>({});
   const [distanceCache, setDistanceCache] = useState<Record<string, { distanceKm: number; durationMin: number }>>({});
-  const [sortBy, setSortBy] = useState<MapSortOption>("soonest");
   const [loadingTime, setLoadingTime] = useState(false);
 
   // Only show rides that match the search (e.g. "Walmart" → only Walmart destinations/starts)
@@ -74,8 +71,8 @@ export function DashboardRidesMap({ rides, onSelectRide, selectedRideId }: Dashb
   }, [ridesFilteredBySearch, resolveCoords, coordsCache]);
 
   useEffect(() => {
-    if (sortBy !== "time" || !userLocation) return;
-    setLoadingTime(true);
+    if (!userLocation) return;
+    queueMicrotask(() => setLoadingTime(true));
     const run = async () => {
       const updates: Record<string, { distanceKm: number; durationMin: number }> = {};
       for (const ride of ridesFilteredBySearch) {
@@ -93,7 +90,7 @@ export function DashboardRidesMap({ rides, onSelectRide, selectedRideId }: Dashb
       setLoadingTime(false);
     };
     run();
-  }, [sortBy, userLocation, ridesFilteredBySearch, coordsCache]);
+  }, [userLocation, ridesFilteredBySearch, coordsCache]);
 
   const ridesWithDistance = useMemo(() => {
     return ridesFilteredBySearch
@@ -118,17 +115,11 @@ export function DashboardRidesMap({ rides, onSelectRide, selectedRideId }: Dashb
 
   const sortedRides = useMemo(() => {
     const list = [...ridesWithDistance];
-    if (sortBy === "soonest") {
-      list.sort((a, b) =>
-        a.ride.date.localeCompare(b.ride.date) || a.ride.time.localeCompare(b.ride.time)
-      );
-    } else if (sortBy === "distance" && userLocation) {
-      list.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
-    } else if (sortBy === "time" && userLocation) {
+    if (userLocation) {
       list.sort((a, b) => (a.durationMin ?? Infinity) - (b.durationMin ?? Infinity));
     }
     return list;
-  }, [ridesWithDistance, sortBy, userLocation]);
+  }, [ridesWithDistance, userLocation]);
 
   // Only starting points (no routes, no destination pins) so people can see which start is closer to them
   const markers = useMemo(() => {
@@ -203,17 +194,9 @@ export function DashboardRidesMap({ rides, onSelectRide, selectedRideId }: Dashb
             Rides matching “{mapSearch.trim()}”
           </span>
           {ridesFilteredBySearch.length > 0 && (
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as MapSortOption)}
-            className="rounded-lg border border-stone-300 px-2 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-          >
-            <option value="soonest">Soonest</option>
-            <option value="distance">Closest (distance)</option>
-            <option value="time">
-              {loadingTime ? "Loading…" : "Closest (drive time)"}
-            </option>
-          </select>
+            <span className="rounded-lg border border-stone-300 px-2 py-1.5 text-xs text-stone-600">
+              {loadingTime ? "Sorting by drive time…" : "Sorted by drive time"}
+            </span>
           )}
         </div>
         {!mapSearch.trim() ? (

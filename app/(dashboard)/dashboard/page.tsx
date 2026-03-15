@@ -195,7 +195,7 @@ export default function DashboardPage() {
                   className="rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
                 />
                 <select
-                  value={filters.sortBy ?? "soonest"}
+                  value={filters.sortBy ?? "price_asc"}
                   onChange={(e) =>
                     updateFilter(
                       "sortBy",
@@ -204,21 +204,10 @@ export default function DashboardPage() {
                   }
                   className="rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
                 >
-                  <option value="soonest">Soonest</option>
                   <option value="price_asc">Lowest price</option>
                   <option value="price_desc">Highest price</option>
                   <option value="destination">Destination A–Z</option>
                 </select>
-                <input
-                  type="number"
-                  min={1}
-                  placeholder="Min seats"
-                  value={filters.minSeats ?? ""}
-                  onChange={(e) =>
-                    updateFilter("minSeats", e.target.value ? Number(e.target.value) : undefined)
-                  }
-                  className="w-24 rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-                />
                 <input
                   type="number"
                   min={0}

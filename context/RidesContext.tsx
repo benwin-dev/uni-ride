@@ -33,15 +33,9 @@ function filterAndSortRides(rides: Ride[], filters: RideFilters): Ride[] {
   if (filters.priceMin != null) result = result.filter((r) => r.price >= filters.priceMin!);
   if (filters.priceMax != null) result = result.filter((r) => r.price <= filters.priceMax!);
   if (filters.date) result = result.filter((r) => r.date === filters.date);
-  if (filters.minSeats != null) result = result.filter((r) => r.availableSeats >= filters.minSeats!);
 
-  const sortBy = filters.sortBy ?? "soonest";
-  if (sortBy === "soonest") {
-    result.sort((a, b) => {
-      const d = a.date.localeCompare(b.date) || a.time.localeCompare(b.time);
-      return d;
-    });
-  } else if (sortBy === "price_asc") {
+  const sortBy = filters.sortBy;
+  if (sortBy === "price_asc") {
     result.sort((a, b) => a.price - b.price);
   } else if (sortBy === "price_desc") {
     result.sort((a, b) => b.price - a.price);

@@ -45,8 +45,7 @@ export interface RideFilters {
   freeOnly?: boolean;
   date?: string;
   time?: string;
-  minSeats?: number;
-  sortBy?: "soonest" | "price_asc" | "price_desc" | "destination";
+  sortBy?: "price_asc" | "price_desc" | "destination";
 }
 
 // Ride request: user is looking for a ride (MongoDB-ready)
