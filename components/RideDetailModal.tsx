@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import type { Ride } from "@/lib/types";
+import { estimateCO2SavedByJoining } from "@/lib/carbon-utils";
 
 interface RideDetailModalProps {
   ride: Ride | null;
@@ -67,6 +68,11 @@ export function RideDetailModal({
         {joinSuccess === true && (
           <div className="mt-4 rounded-lg bg-emerald-50 p-4 text-emerald-800">
             <p className="font-medium">You have booked successfully.</p>
+            <p className="mt-2 text-sm">
+              You’ve saved approximately{" "}
+              <strong>{estimateCO2SavedByJoining(ride).kgCO2Saved} kg CO₂</strong> by sharing this
+              ride—one fewer car on the road.
+            </p>
             <button
               type="button"
               onClick={onDismissSuccess}
