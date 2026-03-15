@@ -1,26 +1,75 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { ChatRoom } from "@/lib/types";
-import {
-  chatRooms,
-  findRoomByRideId,
-  findRoomByRequestId,
-  getRoomsForUser,
-} from "../store";
+import { connectDB } from "@/lib/db";
+import { ChatRoomModel } from "@/lib/models/ChatRoom";
+
+function docToRoom(d: { _id: unknown; id: string; type: string; rideId?: string; requestId?: string; participantIds: string[]; title: string; createdAt: Date; updatedAt?: Date }): ChatRoom {
+  return {
+    id: d.id,
+    type: d.type as ChatRoom["type"],
+    rideId: d.rideId,
+    requestId: d.requestId,
+    participantIds: d.participantIds ?? [],
+    title: d.title ?? "Chat",
+    createdAt: d.createdAt.toISOString(),
+    updatedAt: d.updatedAt?.toISOString(),
+  };
+}
 
 export async function GET(request: NextRequest) {
-  const userId = request.nextUrl.searchParams.get("userId");
-  if (!userId) {
+  try {
+    const db = await connectDB();
+    if (!db) {
+      return NextResponse.json(
+        { error: "Database not configured" },
+        { status: 503 }
+      );
+    }
+
+    const userId = request.nextUrl.searchParams.get("userId");
+    if (!userId) {
+      return NextResponse.json(
+        { error: "userId required" },
+        { status: 400 }
+      );
+    }
+
+    const docs = await ChatRoomModel.find({ participantIds: userId })
+      .sort({ updatedAt: -1 })
+      .lean()
+      .exec();
+
+    const rooms: ChatRoom[] = docs.map((d) => ({
+      id: d.id,
+      type: d.type as ChatRoom["type"],
+      rideId: d.rideId,
+      requestId: d.requestId,
+      participantIds: d.participantIds ?? [],
+      title: d.title ?? "Chat",
+      createdAt: (d.createdAt as Date).toISOString(),
+      updatedAt: (d.updatedAt as Date)?.toISOString?.(),
+    }));
+
+    return NextResponse.json(rooms);
+  } catch (e) {
+    console.error("GET /api/chat/rooms:", e);
     return NextResponse.json(
-      { error: "userId required" },
-      { status: 400 }
+      { error: e instanceof Error ? e.message : "Failed to load rooms" },
+      { status: 500 }
     );
   }
-  const rooms = getRoomsForUser(userId);
-  return NextResponse.json(rooms);
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const db = await connectDB();
+    if (!db) {
+      return NextResponse.json(
+        { error: "Database not configured" },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
     const {
       type,
@@ -36,42 +85,35 @@ export async function POST(request: NextRequest) {
       title: string;
     };
 
-    let existing: ChatRoom | undefined;
-    if (type === "ride" && rideId) {
-      existing = findRoomByRideId(rideId);
-    } else if (type === "request" && requestId) {
-      existing = findRoomByRequestId(requestId);
-    }
-
-    if (existing) {
-      // Update participants so new joiners/offerers are included
-      existing.participantIds = Array.isArray(participantIds) ? participantIds : existing.participantIds;
-      existing.title = title || existing.title;
-      existing.updatedAt = new Date().toISOString();
-      return NextResponse.json(existing);
-    }
-
-    const now = new Date().toISOString();
     const id =
       type === "ride"
         ? `room-ride-${rideId}`
         : `room-request-${requestId}`;
-    const newRoom: ChatRoom = {
+
+    let room = await ChatRoomModel.findOne({ id }).exec();
+    if (room) {
+      room.participantIds = Array.isArray(participantIds) ? participantIds : room.participantIds;
+      if (title) room.title = title;
+      await room.save();
+      const r = room.toObject();
+      return NextResponse.json(docToRoom(r as Parameters<typeof docToRoom>[0]));
+    }
+
+    const newRoom = await ChatRoomModel.create({
       id,
       type,
       rideId: type === "ride" ? rideId : undefined,
       requestId: type === "request" ? requestId : undefined,
       participantIds: Array.isArray(participantIds) ? participantIds : [],
       title: title || "Chat",
-      createdAt: now,
-      updatedAt: now,
-    };
-    chatRooms.push(newRoom);
-    return NextResponse.json(newRoom);
+    });
+
+    return NextResponse.json(docToRoom(newRoom.toObject() as Parameters<typeof docToRoom>[0]));
   } catch (e) {
+    console.error("POST /api/chat/rooms:", e);
     return NextResponse.json(
-      { error: "Invalid request body" },
-      { status: 400 }
+      { error: e instanceof Error ? e.message : "Failed to create room" },
+      { status: 500 }
     );
   }
 }

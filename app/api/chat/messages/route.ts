@@ -1,23 +1,62 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { ChatMessage, ChatRoom } from "@/lib/types";
-import { chatMessages, chatRooms, broadcastNewMessage } from "../store";
+import type { ChatMessage } from "@/lib/types";
+import { connectDB } from "@/lib/db";
+import { ChatRoomModel } from "@/lib/models/ChatRoom";
+import { ChatMessageModel } from "@/lib/models/ChatMessage";
+import { broadcastNewMessage } from "../store";
 
 export async function GET(request: NextRequest) {
-  const roomId = request.nextUrl.searchParams.get("roomId");
-  if (!roomId) {
+  try {
+    const db = await connectDB();
+    if (!db) {
+      return NextResponse.json(
+        { error: "Database not configured" },
+        { status: 503 }
+      );
+    }
+
+    const roomId = request.nextUrl.searchParams.get("roomId");
+    if (!roomId) {
+      return NextResponse.json(
+        { error: "roomId required" },
+        { status: 400 }
+      );
+    }
+
+    const docs = await ChatMessageModel.find({ roomId })
+      .sort({ createdAt: 1 })
+      .lean()
+      .exec();
+
+    const messages: ChatMessage[] = docs.map((d) => ({
+      id: (d._id as { toString: () => string }).toString(),
+      roomId: d.roomId,
+      senderId: d.senderId,
+      senderName: d.senderName,
+      content: d.content,
+      createdAt: (d.createdAt as Date).toISOString(),
+    }));
+
+    return NextResponse.json(messages);
+  } catch (e) {
+    console.error("GET /api/chat/messages:", e);
     return NextResponse.json(
-      { error: "roomId required" },
-      { status: 400 }
+      { error: e instanceof Error ? e.message : "Failed to load messages" },
+      { status: 500 }
     );
   }
-  const messages = chatMessages
-    .filter((m) => m.roomId === roomId)
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-  return NextResponse.json(messages);
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const db = await connectDB();
+    if (!db) {
+      return NextResponse.json(
+        { error: "Database not configured" },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
     const { roomId, senderId, senderName, content } = body as {
       roomId: string;
@@ -34,38 +73,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let room = chatRooms.find((r) => r.id === roomId);
+    let room = await ChatRoomModel.findOne({ id: roomId }).lean().exec();
     if (!room) {
-      const now = new Date().toISOString();
-      room = {
+      const type = roomId.startsWith("room-request-") ? "request" : "ride";
+      const rideId = type === "ride" ? roomId.replace("room-ride-", "") : undefined;
+      const requestId = type === "request" ? roomId.replace("room-request-", "") : undefined;
+      await ChatRoomModel.create({
         id: roomId,
-        type: roomId.startsWith("room-request-") ? "request" : "ride",
+        type,
+        rideId,
+        requestId,
         participantIds: [senderId],
         title: "Chat",
-        createdAt: now,
-        updatedAt: now,
-      } as ChatRoom;
-      if (room.type === "request") (room as ChatRoom).requestId = roomId.replace("room-request-", "");
-      else (room as ChatRoom).rideId = roomId.replace("room-ride-", "");
-      chatRooms.push(room);
+      });
     }
 
-    const now = new Date().toISOString();
-    const msg: ChatMessage = {
-      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    const doc = await ChatMessageModel.create({
       roomId,
       senderId,
       senderName,
       content: trimmed,
-      createdAt: now,
+    });
+
+    const msg: ChatMessage = {
+      id: doc._id.toString(),
+      roomId: doc.roomId,
+      senderId: doc.senderId,
+      senderName: doc.senderName,
+      content: doc.content,
+      createdAt: doc.createdAt.toISOString(),
     };
-    chatMessages.push(msg);
+
     broadcastNewMessage(roomId, msg);
+
     return NextResponse.json(msg);
   } catch (e) {
+    console.error("POST /api/chat/messages:", e);
     return NextResponse.json(
-      { error: "Invalid request body" },
-      { status: 400 }
+      { error: e instanceof Error ? e.message : "Failed to send message" },
+      { status: 500 }
     );
   }
 }
