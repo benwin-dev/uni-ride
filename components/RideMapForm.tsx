@@ -38,7 +38,6 @@ export function RideMapForm({
   const [route, setRoute] = useState<[number, number][] | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [geocodeLoading, setGeocodeLoading] = useState<"start" | "dest" | null>(null);
-  const [pinMode, setPinMode] = useState<"start" | "dest" | null>(null);
   const [pinLoading, setPinLoading] = useState(false);
 
   useEffect(() => {
@@ -126,23 +125,6 @@ export function RideMapForm({
     return () => abort.abort();
   }, [startCoords, destCoords]);
 
-  const useMyLocation = useCallback(() => {
-    if (!navigator.geolocation) return;
-    setGeocodeLoading("start");
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        setUserLocation({ lat, lng });
-        setStartCoords({ lat, lng });
-        const name = await reverseGeocode(lat, lng);
-        onStartChange(name?.trim() || "My location", lat, lng);
-        setGeocodeLoading(null);
-      },
-      () => setGeocodeLoading(null)
-    );
-  }, [onStartChange]);
-
   const setAddressFromCoords = useCallback(
     async (lat: number, lng: number, isStart: boolean) => {
       const name = await reverseGeocode(lat, lng);
@@ -158,16 +140,9 @@ export function RideMapForm({
     [onStartChange, onDestinationChange]
   );
 
-  const handleMapClick = useCallback(
-    async (lat: number, lng: number) => {
-      if (!pinMode) return;
-      setPinLoading(true);
-      await setAddressFromCoords(lat, lng, pinMode === "start");
-      setPinLoading(false);
-      setPinMode(null);
-    },
-    [pinMode, setAddressFromCoords]
-  );
+  const handleMapClick = useCallback((_lat: number, _lng: number) => {
+    // Click-to-pin removed; pins are set via address search and can be dragged.
+  }, []);
 
   const handleStartDragEnd = useCallback(
     async (lat: number, lng: number) => {
@@ -220,61 +195,6 @@ export function RideMapForm({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={updateStartFromGeocode}
-          disabled={disabled || !startLocation.trim() || geocodeLoading === "start"}
-          className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-50"
-        >
-          {geocodeLoading === "start" ? "Searching…" : "Show start on map"}
-        </button>
-        <button
-          type="button"
-          onClick={useMyLocation}
-          disabled={disabled}
-          className="rounded-lg border border-teal-300 px-3 py-1.5 text-sm font-medium text-teal-700 hover:bg-teal-50"
-        >
-          Use my location
-        </button>
-        <button
-          type="button"
-          onClick={() => setPinMode((m) => (m === "start" ? null : "start"))}
-          disabled={disabled || pinLoading}
-          className={`rounded-lg border px-3 py-1.5 text-sm font-medium ${
-            pinMode === "start"
-              ? "border-teal-500 bg-teal-100 text-teal-800"
-              : "border-stone-300 text-stone-700 hover:bg-stone-50"
-          }`}
-        >
-          {pinMode === "start" ? "Click map to set start (click again to cancel)" : "Pin start on map"}
-        </button>
-        <button
-          type="button"
-          onClick={updateDestFromGeocode}
-          disabled={disabled || !destination.trim() || geocodeLoading === "dest"}
-          className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-50"
-        >
-          {geocodeLoading === "dest" ? "Searching…" : "Show destination on map"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setPinMode((m) => (m === "dest" ? null : "dest"))}
-          disabled={disabled || pinLoading}
-          className={`rounded-lg border px-3 py-1.5 text-sm font-medium ${
-            pinMode === "dest"
-              ? "border-teal-500 bg-teal-100 text-teal-800"
-              : "border-stone-300 text-stone-700 hover:bg-stone-50"
-          }`}
-        >
-          {pinMode === "dest" ? "Click map to set destination (click again to cancel)" : "Pin destination on map"}
-        </button>
-      </div>
-      {pinMode && (
-        <p className="text-sm text-teal-700">
-          Click the map to set the {pinMode === "start" ? "start" : "destination"} address, or drag the pin after placing it to fine-tune.
-        </p>
-      )}
       {(pinLoading || geocodeLoading) && <p className="text-sm text-stone-500">Getting address…</p>}
       {(startCoords || destCoords) && !pinLoading && !geocodeLoading && (
         <p className="text-sm text-stone-500">Drag a pin on the map to update the saved address.</p>
@@ -286,7 +206,7 @@ export function RideMapForm({
         polyline={route ?? undefined}
         userLocation={userLocation}
         onMapClick={handleMapClick}
-        clickToPin={pinMode !== null}
+        clickToPin={false}
         height="280px"
         className="rounded-xl overflow-hidden border border-stone-200"
       />
