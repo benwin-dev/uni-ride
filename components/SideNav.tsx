@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/matching", label: "Matching" },
   { href: "/rides/create", label: "Create Ride" },
   { href: "/rides/request", label: "Request Ride" },
   { href: "/rides/my-rides", label: "My Rides" },
