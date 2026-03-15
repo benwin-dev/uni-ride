@@ -47,20 +47,22 @@ export default function EditRidePage() {
       return;
     }
     if (ride) {
-      setForm({
-        startLocation: ride.startLocation,
-        destination: ride.destination,
-        startLat: ride.startLat,
-        startLng: ride.startLng,
-        destLat: ride.destLat,
-        destLng: ride.destLng,
-        date: ride.date,
-        time: ride.time,
-        note: ride.note ?? "",
-        price: ride.price.toString(),
-        availableSeats: ride.availableSeats.toString(),
-        totalSeats: ride.totalSeats.toString(),
-      });
+      queueMicrotask(() =>
+        setForm({
+          startLocation: ride.startLocation,
+          destination: ride.destination,
+          startLat: ride.startLat,
+          startLng: ride.startLng,
+          destLat: ride.destLat,
+          destLng: ride.destLng,
+          date: ride.date,
+          time: ride.time,
+          note: ride.note ?? "",
+          price: ride.price.toString(),
+          availableSeats: ride.availableSeats.toString(),
+          totalSeats: ride.totalSeats.toString(),
+        })
+      );
     }
   }, [ride, user, router]);
 
@@ -140,11 +142,23 @@ export default function EditRidePage() {
 
   return (
     <div className="p-6 md:p-8">
-      <div className="mx-auto max-w-xl">
-        <h1 className="text-2xl font-bold text-stone-900">Edit ride</h1>
-        <p className="mt-1 text-stone-600">{ride.destination}</p>
+      <div className="mx-auto max-w-2xl">
+        <section className="rounded-2xl border border-emerald-100 bg-white/90 p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold text-stone-900">Edit ride</h1>
+              <p className="mt-1 text-stone-600">{ride.destination}</p>
+            </div>
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+              Update details
+            </span>
+          </div>
+          <p className="mt-3 rounded-lg bg-emerald-50/70 px-3 py-2 text-xs text-emerald-800">
+            Keep pickup, drop-off, time, and seats accurate for riders.
+          </p>
+        </section>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-5 rounded-xl border border-stone-200/80 bg-white p-6">
+        <form onSubmit={handleSubmit} className="mt-8 space-y-5 rounded-2xl border border-emerald-100 bg-white/95 p-6 shadow-sm">
           {error && (
             <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">{error}</div>
           )}
@@ -266,7 +280,7 @@ export default function EditRidePage() {
           <div className="flex gap-3 pt-2">
             <button
               type="submit"
-              className="rounded-lg bg-teal-600 px-4 py-2.5 font-semibold text-white hover:bg-teal-700"
+              className="rounded-lg bg-emerald-600 px-4 py-2.5 font-semibold text-white transition hover:bg-emerald-700"
             >
               Save changes
             </button>

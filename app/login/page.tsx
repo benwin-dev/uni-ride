@@ -26,7 +26,7 @@ export default function LoginPage() {
         router.refresh();
       }, 0);
     } else {
-      setError("Login failed. Use a university email (e.g. alex.chen@university.edu) or any email ending in @university.edu");
+      setError("Login failed. Use a university email (e.g. praneetha.chandraprakash@university.edu) or any email ending in @university.edu");
     }
   };
 
@@ -89,7 +89,7 @@ export default function LoginPage() {
               <Link href="/signup" className="font-medium text-teal-600 hover:underline">sign up</Link>.
             </p>
             <p className="mt-2 text-center text-xs text-stone-400">
-              Mock users: alex.chen@university.edu, jordan.smith@university.edu
+              Mock users: praneetha.chandraprakash@university.edu, benwin.george@university.edu
             </p>
           </form>
 

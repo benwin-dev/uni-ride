@@ -19,9 +19,9 @@ export function RequestCard({ request, currentUserId, onOffer, onRemoveOffer, on
   const isInRequest = isRequester || hasOffered;
 
   return (
-    <div className="flex flex-col rounded-xl border border-stone-200/80 bg-white p-5 shadow-sm transition hover:border-teal-200 hover:shadow-md">
+    <div className="flex h-full min-h-[240px] flex-col rounded-2xl border border-emerald-100 bg-white/95 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md">
       <div
-        className={onClick ? "cursor-pointer" : ""}
+        className={`flex flex-1 flex-col min-h-0 ${onClick ? "cursor-pointer" : ""}`}
         onClick={onClick}
         onKeyDown={onClick ? (e) => e.key === "Enter" && onClick() : undefined}
         role={onClick ? "button" : undefined}
@@ -29,7 +29,7 @@ export function RequestCard({ request, currentUserId, onOffer, onRemoveOffer, on
       >
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h3 className="text-lg font-semibold text-stone-900">{request.destination}</h3>
-          <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-800">
+          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
             Request
           </span>
         </div>
@@ -59,9 +59,10 @@ export function RequestCard({ request, currentUserId, onOffer, onRemoveOffer, on
             {request.status === "cancelled" ? "Cancelled" : "Matched"}
           </p>
         )}
+        <span className="flex-1 block min-h-2" aria-hidden />
       </div>
       {isOpen && currentUserId && (
-        <div className="mt-4 pt-3 border-t border-stone-100 flex flex-wrap gap-2">
+        <div className="mt-auto flex flex-wrap gap-2 border-t border-emerald-50 pt-3 shrink-0">
           {isInRequest && onOpenChat && (
             <button
               type="button"
@@ -69,15 +70,15 @@ export function RequestCard({ request, currentUserId, onOffer, onRemoveOffer, on
                 e.stopPropagation();
                 onOpenChat(request);
               }}
-              className="rounded-lg border border-teal-300 px-4 py-2 text-sm font-medium text-teal-700 hover:bg-teal-50"
+              className="rounded-lg border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
             >
               Open chat
             </button>
           )}
           {!isRequester && (hasOffered && onRemoveOffer ? (
             <>
-              <span className="rounded-lg bg-teal-100 px-4 py-2 text-sm font-medium text-teal-800">
-                You're offering to help
+              <span className="rounded-lg bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-800">
+                You&apos;re offering to help
               </span>
               <button
                 type="button"
@@ -97,7 +98,7 @@ export function RequestCard({ request, currentUserId, onOffer, onRemoveOffer, on
                 e.stopPropagation();
                 onOffer(request.id);
               }}
-              className="rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+              className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
             >
               Offer ride
             </button>

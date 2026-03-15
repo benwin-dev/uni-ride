@@ -73,7 +73,7 @@ export default function SignUpPage() {
               type="text"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              placeholder="Alex Chen"
+              placeholder="Praneetha Chandra Prakash"
               className="mt-1 w-full rounded-lg border border-stone-300 px-4 py-2.5 text-stone-900 placeholder:text-stone-400 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
               required
             />
@@ -83,7 +83,7 @@ export default function SignUpPage() {
               type="email"
               value={form.email}
               onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-              placeholder="alex@university.edu"
+              placeholder="praneetha.chandraprakash@university.edu"
               className="mt-1 w-full rounded-lg border border-stone-300 px-4 py-2.5 text-stone-900 placeholder:text-stone-400 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
               required
             />

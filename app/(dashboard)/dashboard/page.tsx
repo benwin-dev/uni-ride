@@ -103,33 +103,40 @@ export default function DashboardPage() {
   return (
     <div className="p-6 md:p-8">
       <div className="mx-auto max-w-5xl">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-stone-900">Dashboard</h1>
-            <p className="mt-1 text-stone-600">Find rides, request a ride, or create one.</p>
+        <div className="rounded-2xl border border-emerald-100 bg-white/85 p-5 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-stone-900">Dashboard</h1>
+              <p className="mt-1 text-stone-600">Find rides, request a ride, or create one.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/rides/create"
+                className="inline-flex shrink-0 items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+              >
+                Create Ride
+              </Link>
+              <Link
+                href="/rides/request"
+                className="inline-flex shrink-0 items-center justify-center rounded-lg border border-emerald-500 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
+              >
+                Request Ride
+              </Link>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href="/rides/create"
-              className="inline-flex shrink-0 items-center justify-center rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-700"
-            >
-              Create Ride
-            </Link>
-            <Link
-              href="/rides/request"
-              className="inline-flex shrink-0 items-center justify-center rounded-lg border border-teal-600 px-4 py-2.5 text-sm font-semibold text-teal-700 hover:bg-teal-50"
-            >
-              Request Ride
-            </Link>
+          <div>
+            <p className="mt-3 rounded-lg bg-emerald-50/70 px-3 py-2 text-xs text-emerald-800">
+              Shared rides mean fewer cars, lower cost, and a cleaner campus commute.
+            </p>
           </div>
         </div>
 
-        <div className="mt-6 flex gap-1 rounded-lg border border-stone-200/80 bg-white p-1">
+        <div className="mt-6 flex gap-1 rounded-xl border border-emerald-100 bg-white/90 p-1 shadow-sm">
           <button
             type="button"
             onClick={() => setTab("rides")}
             className={`flex-1 rounded-md px-4 py-2.5 text-sm font-medium transition ${
-              tab === "rides" ? "bg-teal-50 text-teal-700" : "text-stone-600 hover:bg-stone-50"
+              tab === "rides" ? "bg-emerald-50 text-emerald-800" : "text-stone-600 hover:bg-emerald-50/50"
             }`}
           >
             Available rides ({filteredRides.length})
@@ -138,7 +145,7 @@ export default function DashboardPage() {
             type="button"
             onClick={() => setTab("requests")}
             className={`flex-1 rounded-md px-4 py-2.5 text-sm font-medium transition ${
-              tab === "requests" ? "bg-teal-50 text-teal-700" : "text-stone-600 hover:bg-stone-50"
+              tab === "requests" ? "bg-emerald-50 text-emerald-800" : "text-stone-600 hover:bg-emerald-50/50"
             }`}
           >
             Ride requests ({openRequests.length})
@@ -147,15 +154,15 @@ export default function DashboardPage() {
 
         {tab === "rides" && (
           <>
-            <section className="mt-6 rounded-xl border border-stone-200/80 bg-white p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
+            <section className="mt-6 rounded-xl border border-emerald-100 bg-white/90 p-5 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <h2 className="text-sm font-semibold text-stone-700">Filters</h2>
-                <div className="flex gap-1 rounded-lg border border-stone-200 p-0.5">
+                <div className="flex gap-1 rounded-lg border border-emerald-100 bg-emerald-50/30 p-0.5">
                   <button
                     type="button"
                     onClick={() => setRidesViewMode("list")}
                     className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-                      ridesViewMode === "list" ? "bg-teal-100 text-teal-800" : "text-stone-600 hover:bg-stone-50"
+                      ridesViewMode === "list" ? "bg-emerald-100 text-emerald-800" : "text-stone-600 hover:bg-emerald-50"
                     }`}
                   >
                     List
@@ -164,20 +171,20 @@ export default function DashboardPage() {
                     type="button"
                     onClick={() => setRidesViewMode("map")}
                     className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-                      ridesViewMode === "map" ? "bg-teal-100 text-teal-800" : "text-stone-600 hover:bg-stone-50"
+                      ridesViewMode === "map" ? "bg-emerald-100 text-emerald-800" : "text-stone-600 hover:bg-emerald-50"
                     }`}
                   >
                     Map
                   </button>
                 </div>
               </div>
-              <div className="mt-3 flex flex-wrap gap-3">
+              <div className="mt-4 flex flex-wrap items-center gap-4">
                 <input
                   type="text"
                   placeholder="Destination search"
                   value={filters.destination ?? ""}
                   onChange={(e) => updateFilter("destination", e.target.value)}
-                  className="rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  className="min-w-[180px] rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
                 />
                 <label className="flex items-center gap-2 text-sm text-stone-600">
                   <input
@@ -242,7 +249,7 @@ export default function DashboardPage() {
               ) : (
                 <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {filteredRides.map((ride) => (
-                    <li key={ride.id}>
+                    <li key={ride.id} className="flex">
                       <RideCard
                         ride={ride}
                         currentUserId={user?.id}
@@ -272,7 +279,7 @@ export default function DashboardPage() {
             ) : (
               <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {openRequests.map((req) => (
-                  <li key={req.id}>
+                  <li key={req.id} className="flex">
                     <RequestCard
                       request={req}
                       currentUserId={user?.id}

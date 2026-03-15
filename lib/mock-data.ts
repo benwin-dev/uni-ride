@@ -4,8 +4,8 @@ import type { User, Ride } from "./types";
 export const MOCK_USERS: User[] = [
   {
     id: "user-1",
-    name: "Alex Chen",
-    email: "alex.chen@university.edu",
+    name: "Praneetha Chandra Prakash",
+    email: "praneetha.chandraprakash@university.edu",
     university: "State University",
     phone: "+1 555-0101",
     bio: "CS senior, often heading to the airport on Fridays.",
@@ -14,8 +14,8 @@ export const MOCK_USERS: User[] = [
   },
   {
     id: "user-2",
-    name: "Jordan Smith",
-    email: "jordan.smith@university.edu",
+    name: "Benwin George",
+    email: "benwin.george@university.edu",
     university: "State University",
     bio: "Grad student, grocery runs every Sunday.",
     createdAt: "2025-01-16T09:00:00Z",
@@ -30,8 +30,8 @@ export const createInitialRides = (): Ride[] => {
     {
       id: "ride-1",
       createdByUserId: "user-1",
-      creatorName: "Alex Chen",
-      creatorEmail: "alex.chen@university.edu",
+      creatorName: "Praneetha Chandra Prakash",
+      creatorEmail: "praneetha.chandraprakash@university.edu",
       startLocation: "Campus Main Gate",
       destination: "Walmart",
       date: "2025-03-20",
@@ -49,8 +49,8 @@ export const createInitialRides = (): Ride[] => {
     {
       id: "ride-2",
       createdByUserId: "user-1",
-      creatorName: "Alex Chen",
-      creatorEmail: "alex.chen@university.edu",
+      creatorName: "Praneetha Chandra Prakash",
+      creatorEmail: "praneetha.chandraprakash@university.edu",
       startLocation: "Student Union",
       destination: "Airport (SFO)",
       date: "2025-03-22",
@@ -68,8 +68,8 @@ export const createInitialRides = (): Ride[] => {
     {
       id: "ride-3",
       createdByUserId: "user-2",
-      creatorName: "Jordan Smith",
-      creatorEmail: "jordan.smith@university.edu",
+      creatorName: "Benwin George",
+      creatorEmail: "benwin.george@university.edu",
       startLocation: "North Dorm Lot",
       destination: "Trader Joe's",
       date: "2025-03-18",

@@ -17,12 +17,12 @@ export function RideCard({ ride, currentUserId, onClick, onLeave }: RideCardProp
 
   return (
     <div
-      className="flex flex-col rounded-xl border border-stone-200/80 bg-white p-5 shadow-sm transition hover:border-teal-200 hover:shadow-md"
+      className="flex h-full min-h-[240px] flex-col rounded-2xl border border-emerald-100 bg-white/95 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md"
     >
       <button
         type="button"
         onClick={onClick}
-        className="w-full text-left focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:ring-inset rounded-lg -m-1 p-1"
+        className="flex flex-1 flex-col w-full text-left focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:ring-inset rounded-lg -m-1 p-1 min-h-0"
       >
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h3 className="text-lg font-semibold text-stone-900">{ride.destination}</h3>
@@ -56,8 +56,9 @@ export function RideCard({ ride, currentUserId, onClick, onLeave }: RideCardProp
         {ride.creatorName && (
           <p className="mt-2 text-xs text-stone-400">by {ride.creatorName}</p>
         )}
+        <span className="flex-1 block min-h-2" aria-hidden />
       </button>
-      <div className="mt-4 pt-3 border-t border-stone-100">
+      <div className="mt-auto border-t border-emerald-50 pt-3 shrink-0">
         {alreadyJoined && (ride.status === "active" || ride.status === "full") && onLeave ? (
           <button
             type="button"
@@ -78,7 +79,7 @@ export function RideCard({ ride, currentUserId, onClick, onLeave }: RideCardProp
               e.stopPropagation();
               onClick();
             }}
-            className="w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+            className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
           >
             Join ride
           </button>

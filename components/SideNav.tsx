@@ -18,13 +18,16 @@ export function SideNav() {
   const { user, logout } = useAuth();
 
   return (
-    <aside className="flex w-56 flex-col border-r border-stone-200/80 bg-white">
-      <div className="flex h-14 items-center border-b border-stone-200/80 px-5">
-        <Link href="/dashboard" className="text-lg font-bold tracking-tight text-teal-700">
+    <aside className="sticky top-0 flex h-screen w-60 flex-col border-r border-emerald-200/70 bg-white/90 backdrop-blur-sm">
+      <div className="flex h-16 items-center justify-between border-b border-emerald-100 px-5">
+        <Link href="/dashboard" className="text-2xl font-bold tracking-tight text-emerald-700">
           UniRide
         </Link>
+        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+          Eco
+        </span>
       </div>
-      <p className="px-5 py-2 text-xs font-medium uppercase tracking-wider text-stone-400">
+      <p className="px-5 py-2 text-xs font-medium uppercase tracking-wider text-stone-500">
         Menu
       </p>
       <nav className="flex-1 space-y-0.5 px-3 py-2">
@@ -34,10 +37,10 @@ export function SideNav() {
             <Link
               key={href}
               href={href}
-              className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+              className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
                 isActive
-                  ? "bg-teal-50 text-teal-700"
-                  : "text-stone-600 hover:bg-stone-50 hover:text-stone-900"
+                  ? "border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-800 shadow-sm"
+                  : "text-stone-600 hover:bg-emerald-50/60 hover:text-stone-900"
               }`}
             >
               {label}
@@ -45,12 +48,12 @@ export function SideNav() {
           );
         })}
       </nav>
-      <div className="border-t border-stone-200/80 p-3">
-        <p className="truncate px-3 py-1 text-xs text-stone-500">{user?.email}</p>
+      <div className="border-t border-emerald-100 p-3">
+        <p className="truncate rounded-md bg-emerald-50/70 px-3 py-1.5 text-xs text-stone-600">{user?.email}</p>
         <button
           type="button"
           onClick={logout}
-          className="mt-1 w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900"
+          className="mt-2 w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-600 hover:bg-emerald-50 hover:text-stone-900"
         >
           Log out
         </button>

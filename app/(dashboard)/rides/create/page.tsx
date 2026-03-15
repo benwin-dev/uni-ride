@@ -196,13 +196,25 @@ export default function CreateRidePage() {
 
   return (
     <div className="p-6 md:p-8">
-      <div className="mx-auto max-w-xl">
-        <h1 className="text-2xl font-bold text-stone-900">Create a ride</h1>
-        <p className="mt-1 text-stone-600">Share your trip with your campus community.</p>
+      <div className="mx-auto max-w-2xl">
+        <section className="rounded-2xl border border-emerald-100 bg-white/90 p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold text-stone-900">Create a ride</h1>
+              <p className="mt-1 text-stone-600">Share your trip with your campus community.</p>
+            </div>
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+              Sustainable trip
+            </span>
+          </div>
+          <p className="mt-3 rounded-lg bg-emerald-50/70 px-3 py-2 text-xs text-emerald-800">
+            Tip: choose exact pickup and drop points to help riders plan faster.
+          </p>
+        </section>
 
-        <section className="mt-6 rounded-xl border border-teal-200/80 bg-teal-50/50 p-4">
-          <h2 className="text-sm font-semibold text-teal-800">Create with voice</h2>
-          <p className="mt-1 text-sm text-teal-700">
+        <section className="mt-6 rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-4">
+          <h2 className="text-sm font-semibold text-emerald-800">Create with voice</h2>
+          <p className="mt-1 text-sm text-emerald-700">
             Say something like: &ldquo;Create a ride from Main Campus to Walmart tomorrow at 2pm with 2 seats available.&rdquo;
           </p>
           {voiceError && (
@@ -213,7 +225,7 @@ export default function CreateRidePage() {
               <button
                 type="button"
                 onClick={startVoiceRecording}
-                className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-teal-700"
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700"
               >
                 <span aria-hidden>🎤</span>
                 Start recording
@@ -230,12 +242,12 @@ export default function CreateRidePage() {
               </button>
             )}
             {voiceStatus === "processing" && (
-              <span className="text-sm text-teal-700">Processing…</span>
+              <span className="text-sm text-emerald-700">Processing…</span>
             )}
           </div>
         </section>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-5 rounded-xl border border-stone-200/80 bg-white p-6">
+        <form onSubmit={handleSubmit} className="mt-8 space-y-5 rounded-2xl border border-emerald-100 bg-white/95 p-6 shadow-sm">
           {error && (
             <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">{error}</div>
           )}
@@ -363,7 +375,7 @@ export default function CreateRidePage() {
             <button
               type="submit"
               disabled={resolvingLocations}
-              className="rounded-lg bg-teal-600 px-4 py-2.5 font-semibold text-white hover:bg-teal-700"
+              className="rounded-lg bg-emerald-600 px-4 py-2.5 font-semibold text-white transition hover:bg-emerald-700"
             >
               {resolvingLocations ? "Resolving locations..." : "Post Ride"}
             </button>
