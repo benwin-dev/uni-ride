@@ -182,7 +182,6 @@ export function DashboardRidesMap({ rides, onSelectRide, selectedRideId }: Dashb
           center={center}
           zoom={11}
           markers={markers}
-          userLocation={userLocation}
           onMarkerClick={(id) => onSelectRide(id)}
           height="420px"
           className="rounded-xl"
@@ -195,7 +194,7 @@ export function DashboardRidesMap({ rides, onSelectRide, selectedRideId }: Dashb
           </span>
           {ridesFilteredBySearch.length > 0 && (
             <span className="rounded-lg border border-stone-300 px-2 py-1.5 text-xs text-stone-600">
-              {loadingTime ? "Sorting by drive time…" : "Sorted by drive time"}
+              {loadingTime ? "Finding best nearby match…" : "Sorted by best nearby match"}
             </span>
           )}
         </div>
@@ -206,7 +205,7 @@ export function DashboardRidesMap({ rides, onSelectRide, selectedRideId }: Dashb
         ) : (
         <>
         <ul className="max-h-[320px] space-y-2 overflow-y-auto">
-          {sortedRides.map(({ ride, distanceKm, durationMin }) => (
+          {sortedRides.map(({ ride, distanceKm, durationMin }, index) => (
             <li key={ride.id}>
               <button
                 type="button"
@@ -217,7 +216,14 @@ export function DashboardRidesMap({ rides, onSelectRide, selectedRideId }: Dashb
                     : "border-stone-200 bg-white hover:border-teal-200 hover:bg-stone-50"
                 }`}
               >
-                <div className="font-medium text-stone-900">{ride.destination}</div>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-stone-900">{ride.destination}</span>
+                  {userLocation && index === 0 && durationMin != null && (
+                    <span className="rounded bg-teal-100 px-1.5 py-0.5 text-xs font-medium text-teal-700">
+                      Best nearby match
+                    </span>
+                  )}
+                </div>
                 <div className="mt-0.5 text-xs text-stone-500">
                   {ride.startLocation} → {ride.date} {ride.time}
                 </div>
