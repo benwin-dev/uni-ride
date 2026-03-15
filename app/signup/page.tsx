@@ -17,24 +17,27 @@ export default function SignUpPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const ok = signUp({
-      name: form.name.trim(),
-      email: form.email.trim(),
-      university: form.university.trim(),
-      password: form.password || undefined,
-    });
-    setLoading(false);
-    if (ok) {
-      setTimeout(() => {
-        router.push("/dashboard");
-        router.refresh();
-      }, 0);
-    } else {
-      setError("An account with this email already exists. Try logging in instead.");
+    try {
+      const ok = await signUp({
+        name: form.name.trim(),
+        email: form.email.trim(),
+        university: form.university.trim(),
+        password: form.password || undefined,
+      });
+      if (ok) {
+        setTimeout(() => {
+          router.push("/dashboard");
+          router.refresh();
+        }, 0);
+      } else {
+        setError("An account with this email already exists. Try logging in instead.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 

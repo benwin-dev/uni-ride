@@ -80,29 +80,33 @@ export default function RequestRidePage() {
 
     setForm((f) => ({ ...f, startLat, startLng, destLat, destLng }));
 
-    addRequest({
-      createdByUserId: user.id,
-      requesterName: user.name,
-      requesterEmail: user.email,
-      startLocation: form.startLocation.trim(),
-      destination: form.destination.trim(),
-      startLat,
-      startLng,
-      destLat,
-      destLng,
-      date: form.date,
-      time: form.time,
-      note: form.note.trim() || undefined,
-      seatsNeeded,
-      maxPrice: maxPrice ?? 0,
-      status: "open",
-      offeredByUserIds: [],
-    });
-    setSuccess(true);
-    setTimeout(() => {
-      router.push("/dashboard");
-      router.refresh();
-    }, 1500);
+    try {
+      await addRequest({
+        createdByUserId: user.id,
+        requesterName: user.name,
+        requesterEmail: user.email,
+        startLocation: form.startLocation.trim(),
+        destination: form.destination.trim(),
+        startLat,
+        startLng,
+        destLat,
+        destLng,
+        date: form.date,
+        time: form.time,
+        note: form.note.trim() || undefined,
+        seatsNeeded,
+        maxPrice: maxPrice ?? 0,
+        status: "open",
+        offeredByUserIds: [],
+      });
+      setSuccess(true);
+      setTimeout(() => {
+        router.push("/dashboard");
+        router.refresh();
+      }, 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to post request.");
+    }
   };
 
   if (success) {

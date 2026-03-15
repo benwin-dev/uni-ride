@@ -6,7 +6,7 @@ import { createInitialRides } from "@/lib/mock-data";
 
 const STORAGE_KEY = "uniride-rides";
 
-function loadRides(): Ride[] {
+function loadFromStorage(): Ride[] {
   if (typeof window === "undefined") return createInitialRides();
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -51,27 +51,62 @@ interface RidesContextValue {
   filteredRides: Ride[];
   filters: RideFilters;
   setFilters: (f: RideFilters | ((prev: RideFilters) => RideFilters)) => void;
-  addRide: (ride: Omit<Ride, "id" | "createdAt" | "updatedAt">) => Ride;
-  updateRide: (id: string, updates: Partial<Ride>) => void;
-  joinRide: (rideId: string, userId: string) => boolean;
-  leaveRide: (rideId: string, userId: string) => boolean;
-  deleteRide: (rideId: string, creatorUserId: string) => boolean;
+  addRide: (ride: Omit<Ride, "id" | "createdAt" | "updatedAt">) => Promise<Ride>;
+  updateRide: (id: string, updates: Partial<Ride>) => Promise<void>;
+  joinRide: (rideId: string, userId: string) => Promise<boolean>;
+  leaveRide: (rideId: string, userId: string) => Promise<boolean>;
+  deleteRide: (rideId: string, creatorUserId: string) => Promise<boolean>;
   getRideById: (id: string) => Ride | undefined;
   ridesCreatedByUser: (userId: string) => Ride[];
   ridesJoinedByUser: (userId: string) => Ride[];
+  ridesLoading: boolean;
+  ridesError: string | null;
 }
 
 const RidesContext = createContext<RidesContextValue | null>(null);
 
 export function RidesProvider({ children }: { children: React.ReactNode }) {
-  const [rides, setRides] = useState<Ride[]>(loadRides);
+  const [rides, setRides] = useState<Ride[]>([]);
+  const [ridesLoading, setRidesLoading] = useState(true);
+  const [ridesError, setRidesError] = useState<string | null>(null);
   const [filters, setFiltersState] = useState<RideFilters>({});
 
   useEffect(() => {
+    let cancelled = false;
+    setRidesLoading(true);
+    setRidesError(null);
+    fetch("/api/rides")
+      .then((res) => {
+        if (cancelled) return null;
+        if (res.ok) return res.json();
+        if (res.status === 503) return null;
+        throw new Error(res.statusText || "Failed to load rides");
+      })
+      .then((data) => {
+        if (cancelled) return;
+        if (data?.rides) setRides(data.rides);
+        else setRides(loadFromStorage());
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setRidesError(err instanceof Error ? err.message : "Failed to load rides");
+          setRides(loadFromStorage());
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setRidesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (ridesLoading || ridesError) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(rides));
     } catch {}
-  }, [rides]);
+  }, [rides, ridesLoading, ridesError]);
 
   const setFilters = useCallback((f: RideFilters | ((prev: RideFilters) => RideFilters)) => {
     setFiltersState((prev) =>
@@ -82,7 +117,18 @@ export function RidesProvider({ children }: { children: React.ReactNode }) {
   const filteredRides = filterAndSortRides(rides, filters);
 
   const addRide = useCallback(
-    (input: Omit<Ride, "id" | "createdAt" | "updatedAt">) => {
+    async (input: Omit<Ride, "id" | "createdAt" | "updatedAt">): Promise<Ride> => {
+      const res = await fetch("/api/rides", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      const data = await res.json();
+      if (res.ok && data.id) {
+        const ride = data as Ride;
+        setRides((prev) => [...prev, ride]);
+        return ride;
+      }
       const now = new Date().toISOString();
       const ride: Ride = {
         ...input,
@@ -96,7 +142,19 @@ export function RidesProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
-  const updateRide = useCallback((id: string, updates: Partial<Ride>) => {
+  const updateRide = useCallback(async (id: string, updates: Partial<Ride>): Promise<void> => {
+    const res = await fetch(`/api/rides/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    });
+    const data = await res.json();
+    if (res.ok && data.id) {
+      setRides((prev) =>
+        prev.map((r) => (r.id === id ? (data as Ride) : r))
+      );
+      return;
+    }
     const now = new Date().toISOString();
     setRides((prev) =>
       prev.map((r) =>
@@ -105,11 +163,22 @@ export function RidesProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
-  const joinRide = useCallback((rideId: string, userId: string): boolean => {
+  const joinRide = useCallback(async (rideId: string, userId: string): Promise<boolean> => {
+    const res = await fetch(`/api/rides/${rideId}/join`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    const data = await res.json();
+    if (res.ok && data.id) {
+      setRides((prev) =>
+        prev.map((r) => (r.id === rideId ? (data as Ride) : r))
+      );
+      return true;
+    }
     setRides((prev) =>
       prev.map((r) => {
-        if (r.id !== rideId || r.status !== "active" || r.availableSeats <= 0)
-          return r;
+        if (r.id !== rideId || r.status !== "active" || r.availableSeats <= 0) return r;
         if (r.joinedUserIds.includes(userId)) return r;
         const newJoined = [...r.joinedUserIds, userId];
         const newAvailable = r.totalSeats - newJoined.length;
@@ -125,18 +194,29 @@ export function RidesProvider({ children }: { children: React.ReactNode }) {
     return true;
   }, []);
 
-  const leaveRide = useCallback((rideId: string, userId: string): boolean => {
+  const leaveRide = useCallback(async (rideId: string, userId: string): Promise<boolean> => {
+    const res = await fetch(`/api/rides/${rideId}/leave`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    const data = await res.json();
+    if (res.ok && data.id) {
+      setRides((prev) =>
+        prev.map((r) => (r.id === rideId ? (data as Ride) : r))
+      );
+      return true;
+    }
     setRides((prev) =>
       prev.map((r) => {
         if (r.id !== rideId || !r.joinedUserIds.includes(userId)) return r;
         const newJoined = r.joinedUserIds.filter((id) => id !== userId);
         const newAvailable = r.totalSeats - newJoined.length;
-        const newStatus = newAvailable === 0 ? "full" : "active";
         return {
           ...r,
           joinedUserIds: newJoined,
           availableSeats: newAvailable,
-          status: newStatus,
+          status: newAvailable === 0 ? "full" : "active",
           updatedAt: new Date().toISOString(),
         };
       })
@@ -144,14 +224,26 @@ export function RidesProvider({ children }: { children: React.ReactNode }) {
     return true;
   }, []);
 
-  const deleteRide = useCallback((rideId: string, creatorUserId: string): boolean => {
-    setRides((prev) => {
-      const ride = prev.find((r) => r.id === rideId);
-      if (!ride || ride.createdByUserId !== creatorUserId) return prev;
-      return prev.filter((r) => r.id !== rideId);
-    });
-    return true;
-  }, []);
+  const deleteRide = useCallback(
+    async (rideId: string, creatorUserId: string): Promise<boolean> => {
+      const res = await fetch(`/api/rides/${rideId}`, { method: "DELETE" });
+      if (res.ok) {
+        setRides((prev) => {
+          const ride = prev.find((r) => r.id === rideId);
+          if (!ride || ride.createdByUserId !== creatorUserId) return prev;
+          return prev.filter((r) => r.id !== rideId);
+        });
+        return true;
+      }
+      setRides((prev) => {
+        const ride = prev.find((r) => r.id === rideId);
+        if (!ride || ride.createdByUserId !== creatorUserId) return prev;
+        return prev.filter((r) => r.id !== rideId);
+      });
+      return true;
+    },
+    []
+  );
 
   const getRideById = useCallback(
     (id: string) => rides.find((r) => r.id === id),
@@ -186,6 +278,8 @@ export function RidesProvider({ children }: { children: React.ReactNode }) {
         getRideById,
         ridesCreatedByUser,
         ridesJoinedByUser,
+        ridesLoading,
+        ridesError,
       }}
     >
       {children}

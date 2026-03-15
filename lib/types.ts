@@ -34,6 +34,7 @@ export interface Ride {
   totalSeats: number;
   status: RideStatus;
   joinedUserIds: string[];
+  distanceKm?: number;
   createdAt: string;
   updatedAt?: string;
 }

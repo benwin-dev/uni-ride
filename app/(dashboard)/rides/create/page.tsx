@@ -156,31 +156,35 @@ export default function CreateRidePage() {
 
     setForm((f) => ({ ...f, startLat, startLng, destLat, destLng }));
 
-    addRide({
-      createdByUserId: user.id,
-      creatorName: user.name,
-      creatorEmail: user.email,
-      startLocation: form.startLocation.trim(),
-      destination: form.destination.trim(),
-      startLat,
-      startLng,
-      destLat,
-      destLng,
-      date: form.date,
-      time: form.time,
-      note: form.note.trim() || undefined,
-      price: priceNum,
-      isFree,
-      availableSeats,
-      totalSeats,
-      status: "active",
-      joinedUserIds: [],
-    });
-    setSuccess(true);
-    setTimeout(() => {
-      router.push("/dashboard");
-      router.refresh();
-    }, 1500);
+    try {
+      await addRide({
+        createdByUserId: user.id,
+        creatorName: user.name,
+        creatorEmail: user.email,
+        startLocation: form.startLocation.trim(),
+        destination: form.destination.trim(),
+        startLat,
+        startLng,
+        destLat,
+        destLng,
+        date: form.date,
+        time: form.time,
+        note: form.note.trim() || undefined,
+        price: priceNum,
+        isFree,
+        availableSeats,
+        totalSeats,
+        status: "active",
+        joinedUserIds: [],
+      });
+      setSuccess(true);
+      setTimeout(() => {
+        router.push("/dashboard");
+        router.refresh();
+      }, 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create ride.");
+    }
   };
 
   if (success) {

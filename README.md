@@ -53,9 +53,10 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). You’ll see the landing page; use **Log in** or **Sign up** to reach the dashboard.
 
-### 3. Demo auth
+### 3. Auth and data
 
-Auth is **mock** (no real backend): users are stored in `localStorage`. You can sign up with any email; for quick testing, see `lib/mock-data.ts` for predefined demo users and log in with those emails.
+- **With MongoDB:** Set `MONGODB_URI` in `.env.local` (e.g. from [MongoDB Atlas](https://www.mongodb.com/atlas)). Rides, ride requests, and users are stored in the database. Sign up with a password and log in with email + password.
+- **Without MongoDB:** The app falls back to `localStorage` and mock auth. You can sign up with any email; for quick testing, see `lib/mock-data.ts` for predefined demo users.
 
 ---
 
@@ -76,6 +77,7 @@ The app works without any env vars. These enable extra features:
 
 | Variable | Purpose |
 |----------|--------|
+| `MONGODB_URI` | **Database** – MongoDB connection string (e.g. from Atlas). When set, rides, ride requests, and users are stored in MongoDB; auth uses real passwords. When unset, data is kept in `localStorage` and mock auth is used. |
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | **Google Maps** – When set, the app uses Google Maps instead of OpenStreetMap (Leaflet) for the create/edit ride map and dashboard map. Enable the [Maps JavaScript API](https://console.cloud.google.com/apis/library/maps-backend.googleapis.com) in your Google Cloud project. |
 | `NEXT_PUBLIC_GOOGLE_PLACES_API_KEY` | Google Places autocomplete for location search (enable Places API + Maps JavaScript API). Without it, Nominatim/Photon is used. |
 | `OPENROUTESERVICE_API_KEY` | **Driving route on map** – [OpenRouteService](https://openrouteservice.org/) free API key for the create/edit ride map. When set, the map shows the real driving path between start and destination; otherwise the app tries OSRM, then falls back to a straight line. Get a key at [openrouteservice.org/dev](https://openrouteservice.org/dev). |

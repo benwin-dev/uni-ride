@@ -97,7 +97,7 @@ export default function EditRidePage() {
   const totalSeats = Math.max(1, parseInt(form.totalSeats, 10) || 1);
   const seatsValid = availableSeats <= totalSeats && totalSeats >= 1;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (!form.startLocation.trim() || !form.destination.trim() || !form.date || !form.time) {
@@ -108,23 +108,27 @@ export default function EditRidePage() {
       setError("Available seats must be between 0 and total seats.");
       return;
     }
-    updateRide(id, {
-      startLocation: form.startLocation.trim(),
-      destination: form.destination.trim(),
-      startLat: form.startLat,
-      startLng: form.startLng,
-      destLat: form.destLat,
-      destLng: form.destLng,
-      date: form.date,
-      time: form.time,
-      note: form.note.trim() || undefined,
-      price: priceNum,
-      isFree: priceNum === 0,
-      availableSeats,
-      totalSeats,
-    });
-    setSaved(true);
-    setTimeout(() => router.push("/rides/my-rides"), 1200);
+    try {
+      await updateRide(id, {
+        startLocation: form.startLocation.trim(),
+        destination: form.destination.trim(),
+        startLat: form.startLat,
+        startLng: form.startLng,
+        destLat: form.destLat,
+        destLng: form.destLng,
+        date: form.date,
+        time: form.time,
+        note: form.note.trim() || undefined,
+        price: priceNum,
+        isFree: priceNum === 0,
+        availableSeats,
+        totalSeats,
+      });
+      setSaved(true);
+      setTimeout(() => router.push("/rides/my-rides"), 1200);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update ride.");
+    }
   };
 
   if (saved) {

@@ -13,20 +13,24 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const ok = login(email.trim(), password);
-    setLoading(false);
-    if (ok) {
-      // Delay redirect so auth state is committed before dashboard reads it
-      setTimeout(() => {
-        router.push("/dashboard");
-        router.refresh();
-      }, 0);
-    } else {
-      setError("Login failed. Use a university email (e.g. praneetha.chandraprakash@university.edu) or any email ending in @university.edu");
+    try {
+      const ok = await login(email.trim(), password);
+      if (ok) {
+        setTimeout(() => {
+          router.push("/dashboard");
+          router.refresh();
+        }, 0);
+      } else {
+        setError(
+          "Invalid email or password. If the database is not set up, use a university email (e.g. praneetha.chandraprakash@university.edu)."
+        );
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
