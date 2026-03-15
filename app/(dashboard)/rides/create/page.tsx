@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
@@ -8,6 +9,7 @@ import { useRides } from "@/context/RidesContext";
 import { RideMapForm } from "@/components/RideMapForm";
 import { LocationSearchInput } from "@/components/LocationSearchInput";
 import { geocode } from "@/lib/map-utils";
+import type { VoiceRidePayload } from "@/lib/types";
 
 export default function CreateRidePage() {
   const router = useRouter();
@@ -31,6 +33,10 @@ export default function CreateRidePage() {
     availableSeats: "2",
     totalSeats: "3",
   });
+  const [voiceStatus, setVoiceStatus] = useState<"idle" | "recording" | "processing">("idle");
+  const [voiceError, setVoiceError] = useState("");
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
   const priceNum = form.price === "" ? 0 : Number(form.price);
   const isFree = priceNum === 0;
@@ -45,6 +51,65 @@ export default function CreateRidePage() {
       () => {}
     );
   }, []);
+
+  const startVoiceRecording = useCallback(async () => {
+    setVoiceError("");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
+      const recorder = new MediaRecorder(stream);
+      chunksRef.current = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size) chunksRef.current.push(e.data);
+      };
+      recorder.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+      };
+      recorder.start(100);
+      mediaRecorderRef.current = recorder;
+      setVoiceStatus("recording");
+    } catch (err) {
+      setVoiceError("Microphone access denied or unavailable.");
+      setVoiceStatus("idle");
+    }
+  }, []);
+
+  const stopVoiceRecording = useCallback(async () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || voiceStatus !== "recording") return;
+    recorder.stop();
+    mediaRecorderRef.current = null;
+    setVoiceStatus("processing");
+
+    const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
+    try {
+      const formData = new FormData();
+      formData.append("audio", blob, "audio.webm");
+      const res = await fetch("/api/rides/voice", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) {
+        setVoiceError(data?.error ?? "Voice processing failed");
+        setVoiceStatus("idle");
+        return;
+      }
+      const ride = data.ride as VoiceRidePayload;
+      setForm((f) => ({
+        ...f,
+        startLocation: ride.startLocation ?? "",
+        destination: ride.destination ?? "",
+        date: ride.date ?? "",
+        time: ride.time ?? "",
+        note: ride.note ?? "",
+        price: ride.price != null ? String(ride.price) : "",
+        availableSeats: String(ride.availableSeats ?? 2),
+        totalSeats: String(ride.totalSeats ?? 3),
+      }));
+      setVoiceError("");
+    } catch (err) {
+      setVoiceError("Network or server error. Try again.");
+    }
+    setVoiceStatus("idle");
+  }, [voiceStatus]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,6 +199,41 @@ export default function CreateRidePage() {
       <div className="mx-auto max-w-xl">
         <h1 className="text-2xl font-bold text-stone-900">Create a ride</h1>
         <p className="mt-1 text-stone-600">Share your trip with your campus community.</p>
+
+        <section className="mt-6 rounded-xl border border-teal-200/80 bg-teal-50/50 p-4">
+          <h2 className="text-sm font-semibold text-teal-800">Create with voice</h2>
+          <p className="mt-1 text-sm text-teal-700">
+            Say something like: &ldquo;Create a ride from Main Campus to Walmart tomorrow at 2pm with 2 seats available.&rdquo;
+          </p>
+          {voiceError && (
+            <p className="mt-2 text-sm text-amber-700">{voiceError}</p>
+          )}
+          <div className="mt-3 flex items-center gap-3">
+            {voiceStatus === "idle" && (
+              <button
+                type="button"
+                onClick={startVoiceRecording}
+                className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-teal-700"
+              >
+                <span aria-hidden>🎤</span>
+                Start recording
+              </button>
+            )}
+            {voiceStatus === "recording" && (
+              <button
+                type="button"
+                onClick={stopVoiceRecording}
+                className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-rose-700"
+              >
+                <span className="h-2 w-2 animate-pulse rounded-full bg-white" aria-hidden />
+                Stop & create from voice
+              </button>
+            )}
+            {voiceStatus === "processing" && (
+              <span className="text-sm text-teal-700">Processing…</span>
+            )}
+          </div>
+        </section>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5 rounded-xl border border-stone-200/80 bg-white p-6">
           {error && (

@@ -96,3 +96,15 @@ export interface ChatMessage {
   content: string;
   createdAt: string;
 }
+
+/** Parsed ride fields from voice (for API response and form prefill). */
+export interface VoiceRidePayload {
+  startLocation: string;
+  destination: string;
+  date: string;
+  time: string;
+  note?: string;
+  price: number;
+  availableSeats: number;
+  totalSeats: number;
+}
