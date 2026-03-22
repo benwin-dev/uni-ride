@@ -192,8 +192,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const addCO2Saved = useCallback(
     (amount: number) => {
-      if (!user || amount <= 0) return;
-      const newTotal = (user.totalCO2SavedKg ?? 0) + amount;
+      if (!user || amount === 0) return;
+      const current = user.totalCO2SavedKg ?? 0;
+      const newTotal = Math.max(0, current + amount);
+
       fetch(`/api/users/${user.id}/add-co2`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },

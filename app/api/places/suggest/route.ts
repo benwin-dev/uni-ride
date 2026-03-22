@@ -14,6 +14,12 @@ interface GeoResult {
   displayName: string;
 }
 
+/** Photon GeoJSON feature (subset used for suggestions) */
+interface PhotonFeature {
+  geometry?: { coordinates?: [number, number] };
+  properties?: Record<string, string>;
+}
+
 function mapNominatim(data: unknown): GeoResult[] {
   if (!Array.isArray(data)) return [];
   return data
@@ -27,24 +33,18 @@ function mapNominatim(data: unknown): GeoResult[] {
 }
 
 function mapPhoton(data: unknown, fallbackQuery: string): GeoResult[] {
-  const features = Array.isArray((data as { features?: unknown[] })?.features)
-    ? ((data as { features: unknown[] }).features as unknown[])
-    : [];
+  const raw = (data as { features?: unknown })?.features;
+  const features: PhotonFeature[] = Array.isArray(raw) ? (raw as PhotonFeature[]) : [];
   return features
-    .map(
-      (f: {
-        geometry?: { coordinates?: [number, number] };
-        properties?: Record<string, string>;
-      }) => {
-        const coords = f.geometry?.coordinates;
-        const lat = coords?.[1];
-        const lng = coords?.[0];
-        if (typeof lat !== "number" || typeof lng !== "number") return null;
-        const p = f.properties ?? {};
-        const name = [p.name, p.street, p.city, p.state, p.country].filter(Boolean).join(", ");
-        return { lat, lng, displayName: name || fallbackQuery };
-      }
-    )
+    .map((f) => {
+      const coords = f.geometry?.coordinates;
+      const lat = coords?.[1];
+      const lng = coords?.[0];
+      if (typeof lat !== "number" || typeof lng !== "number") return null;
+      const p = f.properties ?? {};
+      const name = [p.name, p.street, p.city, p.state, p.country].filter(Boolean).join(", ");
+      return { lat, lng, displayName: name || fallbackQuery };
+    })
     .filter(Boolean) as GeoResult[];
 }
 

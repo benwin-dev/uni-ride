@@ -25,6 +25,12 @@ export interface RouteResult {
   coordinates: [number, number][]; // [lng, lat] for Leaflet
 }
 
+/** Photon GeoJSON feature (subset used for suggestions) */
+interface PhotonFeature {
+  geometry?: { coordinates?: [number, number] };
+  properties?: Record<string, string>;
+}
+
 /** Geocode an address/place to lat/lng (Nominatim) */
 export async function geocode(query: string): Promise<GeoResult | null> {
   if (!query?.trim()) return null;
@@ -52,24 +58,18 @@ export interface SuggestOptions {
 }
 
 function parsePhotonResponse(photonData: unknown, fallbackQuery: string): GeoResult[] {
-  const features = Array.isArray((photonData as { features?: unknown[] })?.features)
-    ? ((photonData as { features: unknown[] }).features as unknown[])
-    : [];
+  const raw = (photonData as { features?: unknown })?.features;
+  const features: PhotonFeature[] = Array.isArray(raw) ? (raw as PhotonFeature[]) : [];
   return features
-    .map(
-      (f: {
-        geometry?: { coordinates?: [number, number] };
-        properties?: Record<string, string>;
-      }) => {
-        const coords = f.geometry?.coordinates;
-        const lat = coords?.[1];
-        const lng = coords?.[0];
-        if (typeof lat !== "number" || typeof lng !== "number") return null;
-        const p = f.properties ?? {};
-        const name = [p.name, p.street, p.city, p.state, p.country].filter(Boolean).join(", ");
-        return { lat, lng, displayName: name || fallbackQuery };
-      }
-    )
+    .map((f) => {
+      const coords = f.geometry?.coordinates;
+      const lat = coords?.[1];
+      const lng = coords?.[0];
+      if (typeof lat !== "number" || typeof lng !== "number") return null;
+      const p = f.properties ?? {};
+      const name = [p.name, p.street, p.city, p.state, p.country].filter(Boolean).join(", ");
+      return { lat, lng, displayName: name || fallbackQuery };
+    })
     .filter(Boolean) as GeoResult[];
 }
 

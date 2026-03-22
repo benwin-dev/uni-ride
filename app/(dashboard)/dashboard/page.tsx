@@ -47,10 +47,16 @@ export default function DashboardPage() {
   const handleLeave = useCallback(
     (rideId: string) => {
       if (!user) return;
+      const ride = getRideById(rideId);
+      const wasJoined = ride?.joinedUserIds.includes(user.id);
+      if (ride && wasJoined) {
+        const { kgCO2Saved } = estimateCO2SavedByJoining(ride);
+        addCO2Saved(-kgCO2Saved);
+      }
       leaveRide(rideId, user.id);
       setDetailRideId(null);
     },
-    [user, leaveRide]
+    [user, leaveRide, getRideById, addCO2Saved]
   );
 
   const openDetail = useCallback((id: string) => {

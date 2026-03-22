@@ -28,27 +28,21 @@ export async function PATCH(
 
     const body = await request.json();
     const amount = typeof body?.amount === "number" ? body.amount : 0;
-    if (amount < 0) {
-      return NextResponse.json(
-        { error: "amount must be non-negative" },
-        { status: 400 }
-      );
-    }
 
-    const user = await UserModel.findByIdAndUpdate(
-      id,
-      { $inc: { totalCO2SavedKg: amount } },
-      { new: true }
-    )
-      .select("totalCO2SavedKg")
-      .lean()
-      .exec();
-
-    if (!user) {
+    const existing = await UserModel.findById(id).select("totalCO2SavedKg").exec();
+    if (!existing) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const total = (user.totalCO2SavedKg as number) ?? 0;
+    const current =
+      typeof existing.totalCO2SavedKg === "number" ? existing.totalCO2SavedKg : 0;
+    const nextTotal = Math.max(0, current + amount);
+
+    existing.totalCO2SavedKg = nextTotal;
+    await existing.save();
+
+    const user = existing.toObject() as { totalCO2SavedKg?: number };
+    const total = user.totalCO2SavedKg ?? 0;
     return NextResponse.json({ totalCO2SavedKg: total });
   } catch (e) {
     console.error("PATCH /api/users/[id]/add-co2:", e);
