@@ -34,9 +34,10 @@ function mapNominatim(data: unknown): GeoResult[] {
 
 function mapPhoton(data: unknown, fallbackQuery: string): GeoResult[] {
   const raw = (data as { features?: unknown })?.features;
-  const features: PhotonFeature[] = Array.isArray(raw) ? (raw as PhotonFeature[]) : [];
-  return features
-    .map((f) => {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item: unknown) => {
+      const f = item as PhotonFeature;
       const coords = f.geometry?.coordinates;
       const lat = coords?.[1];
       const lng = coords?.[0];
