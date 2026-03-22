@@ -64,7 +64,7 @@ export async function POST(
       return NextResponse.json(docToRide(doc));
     }
 
-    doc.joinedUserIds = doc.joinedUserIds.filter((uid) => uid !== userId);
+    doc.joinedUserIds = doc.joinedUserIds.filter((uid: string) => uid !== userId);
     doc.availableSeats = doc.totalSeats - doc.joinedUserIds.length;
     doc.status = doc.availableSeats === 0 ? "full" : "active";
     await doc.save();

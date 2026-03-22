@@ -58,7 +58,7 @@ export async function POST(
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
 
-    doc.offeredByUserIds = doc.offeredByUserIds.filter((uid) => uid !== userId);
+    doc.offeredByUserIds = doc.offeredByUserIds.filter((uid: string) => uid !== userId);
     await doc.save();
 
     return NextResponse.json(docToRequest(doc));
